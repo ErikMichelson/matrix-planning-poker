@@ -3,7 +3,7 @@ import {
   MuiThemeProvider,
   MuiWidgetApiProvider,
 } from "@matrix-widget-toolkit/mui";
-import { Box, Container } from "@mui/material";
+import { Box } from "@mui/material";
 import { Suspense } from "react";
 import "./App.css";
 import { PlanningPoker } from "./components/PlanningPoker";
@@ -23,7 +23,7 @@ export const App: React.FC<AppParams> = ({ widgetApiPromise }) => {
             type: "info.weeman.planning_poker",
           }}
         >
-          <Box sx={{padding: '8px'}}>
+          <Box sx={{ padding: "8px" }}>
             <PlanningPoker />
           </Box>
         </MuiWidgetApiProvider>
