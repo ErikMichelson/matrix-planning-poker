@@ -1,4 +1,11 @@
-import { RoomEvent, StateEvent, WidgetApi } from "@matrix-widget-toolkit/api";
+import {
+  getRoomMemberDisplayName,
+  isValidRoomMemberStateEvent,
+  RoomEvent,
+  RoomMemberStateEventContent,
+  StateEvent,
+  WidgetApi,
+} from "@matrix-widget-toolkit/api";
 import { BehaviorSubject, filter, Subject, takeUntil } from "rxjs";
 import {
   isValidPlanningPokerCardEvent,
@@ -14,6 +21,7 @@ import {
 type PlanningPokerCard = {
   id: string;
   sender: string;
+  displayName: string;
   value: string;
 };
 
@@ -29,6 +37,11 @@ export class PlanningPokerStore {
   private planningPokerCards = new Map<
     string,
     Map<string, RoomEvent<PlanningPokerCardEvent>>
+  >();
+
+  private roomMembers = new Map<
+    string,
+    StateEvent<RoomMemberStateEventContent>
   >();
 
   constructor(private widgetApi: WidgetApi) {}
@@ -113,6 +126,13 @@ export class PlanningPokerStore {
         filter(isValidPlanningPokerCardEvent),
       )
       .subscribe(this.handlePlanningPokerCardEvent);
+    this.widgetApi
+      .observeStateEvents("m.room.member")
+      .pipe(takeUntil(this.destroySubject), filter(isValidRoomMemberStateEvent))
+      .subscribe((event) => {
+        this.roomMembers.set(event.state_key, event);
+        this.emitCards();
+      });
   }
 
   private emitCards() {
@@ -135,7 +155,9 @@ export class PlanningPokerStore {
       const events = Array.from(eventsMap.values());
 
       // Emit cards for current round
-      this.planningPokerCardsSubject.next(events.map(mapToCard));
+      this.planningPokerCardsSubject.next(
+        events.map((e) => mapToCard(e, this.roomMembers)),
+      );
       return;
     }
 
@@ -156,7 +178,9 @@ export class PlanningPokerStore {
       const events = Array.from(eventsMap.values());
 
       // Emit cards for current round
-      this.planningPokerCardsSubject.next(events.map(mapToCard));
+      this.planningPokerCardsSubject.next(
+        events.map((e) => mapToCard(e, this.roomMembers)),
+      );
       return;
     }
 
@@ -166,10 +190,15 @@ export class PlanningPokerStore {
 
 const mapToCard = (
   event: RoomEvent<PlanningPokerCardEvent>,
+  roomMembers: Map<string, StateEvent<RoomMemberStateEventContent>>,
 ): PlanningPokerCard => {
+  const member = roomMembers.get(event.sender);
   return {
     id: event.event_id,
     sender: event.sender,
+    displayName: member
+      ? getRoomMemberDisplayName(member, [...roomMembers.values()])
+      : event.sender,
     value: event.content.value,
   };
 };

@@ -49,7 +49,10 @@ export const ActivePlanningPokerRound: React.FC<
             <CheckIcon />
           </Avatar>
         </ListItemAvatar>
-        <ListItemText>{c.sender}</ListItemText>
+        <ListItemText
+          primary={c.displayName}
+          secondary={c.displayName !== c.sender ? c.sender : undefined}
+        />
       </ListItem>
     );
   });

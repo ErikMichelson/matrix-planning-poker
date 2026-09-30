@@ -28,7 +28,10 @@ export const LastPlanningPokerRound: React.FC<LastPlanningPokerRoundProps> = ({
         <ListItemAvatar>
           <Avatar variant="square">{c.value}</Avatar>
         </ListItemAvatar>
-        <ListItemText>{c.sender}</ListItemText>
+        <ListItemText
+          primary={c.displayName}
+          secondary={c.displayName !== c.sender ? c.sender : undefined}
+        />
       </ListItem>
     );
   });

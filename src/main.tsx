@@ -28,6 +28,10 @@ const widgetApiPromise = WidgetApiImpl.create({
       EventDirection.Receive,
       PLANNING_POKER_CARD_EVENT,
     ),
+    WidgetEventCapability.forStateEvent(
+      EventDirection.Receive,
+      "m.room.member",
+    ),
   ],
 });
 
