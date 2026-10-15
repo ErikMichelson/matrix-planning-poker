@@ -58,7 +58,7 @@ export const ActivePlanningPokerRound: React.FC<
   });
 
   const sendCardEvent = (value: string) => {
-    widgetApi.sendRoomEvent(PLANNING_POKER_CARD_EVENT, {
+    void widgetApi.sendRoomEvent(PLANNING_POKER_CARD_EVENT, {
       value,
       "m.relates_to": {
         rel_type: "m.reference",
@@ -68,7 +68,7 @@ export const ActivePlanningPokerRound: React.FC<
   };
 
   const sendStopEvent = () => {
-    widgetApi.sendStateEvent(PLANNING_POKER_ROUND_EVENT, {
+    void widgetApi.sendStateEvent(PLANNING_POKER_ROUND_EVENT, {
       active: false,
     });
   };

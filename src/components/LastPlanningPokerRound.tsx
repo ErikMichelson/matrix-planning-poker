@@ -37,7 +37,7 @@ export const LastPlanningPokerRound: React.FC<LastPlanningPokerRoundProps> = ({
   });
 
   const sendStartEvent = () => {
-    widgetApi.sendStateEvent(PLANNING_POKER_ROUND_EVENT, {
+    void widgetApi.sendStateEvent(PLANNING_POKER_ROUND_EVENT, {
       active: true,
     });
   };

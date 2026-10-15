@@ -5,6 +5,9 @@
     "skipLibCheck": true,
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "types": ["node"],
+    "target": "ES2023",
+    "lib": ["ES2023"],
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "noEmit": true

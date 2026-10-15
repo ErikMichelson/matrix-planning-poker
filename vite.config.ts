@@ -1,13 +1,22 @@
-import basicSsl from "@vitejs/plugin-basic-ssl";
-import react from "@vitejs/plugin-react-swc";
-import { defineConfig, Plugin, PluginOption } from "vite";
-
-const plugins: [Plugin | PluginOption] = [react()];
-
-if (process.env.VITE_SSL === "1") {
-  plugins.push(basicSsl());
-}
+import react from '@vitejs/plugin-react';
+import { defineConfig, lazyPlugins } from 'vite-plus';
 
 export default defineConfig({
-  plugins,
+  plugins: lazyPlugins(() => [react()]),
+  lint: {
+    ignorePatterns: ['dist/**'],
+    plugins: ['typescript', 'react'],
+    options: {
+      typeAware: true,
+      typeCheck: true,
+    },
+    rules: {
+      'react/rules-of-hooks': 'error',
+      'react/exhaustive-deps': 'warn',
+      'react/only-export-components': ['warn', { allowConstantExport: true }],
+    },
+  },
+  fmt: {
+    ignorePatterns: ['dist/**', 'README.md', 'LICENSE'],
+  },
 });

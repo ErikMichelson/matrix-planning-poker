@@ -4,7 +4,7 @@ import HttpBackend from 'i18next-http-backend';
 import { initReactI18next } from 'react-i18next';
 import { setLocale } from './lib/locale';
 
-i18n
+void i18n
   .use(ChainedBackend)
   .use(initReactI18next)
   .init({
