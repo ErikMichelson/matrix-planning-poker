@@ -1,0 +1,36 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
+  "enabledManagers": ["github-actions", "npm"],
+  "schedule": ["* 0-3 * * 1"],
+  "semanticCommits": "enabled",
+  "packageRules": [
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions",
+      "semanticCommitType": "ci",
+      "semanticCommitScope": "deps"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["dependencies", "devDependencies", "pnpm-workspace.overrides"],
+      "rangeStrategy": "pin"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["react", "react-dom", "@types/react", "@types/react-dom"],
+      "groupName": "React",
+      "separateMajorMinor": false,
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "deps"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["i18next", "react-i18next"],
+      "groupName": "i18next",
+      "separateMajorMinor": false,
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "deps"
+    }
+  ]
+}
