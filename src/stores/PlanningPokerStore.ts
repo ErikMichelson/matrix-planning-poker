@@ -5,18 +5,19 @@ import {
   RoomMemberStateEventContent,
   StateEvent,
   WidgetApi,
-} from "@matrix-widget-toolkit/api";
-import { BehaviorSubject, filter, Subject, takeUntil } from "rxjs";
+} from '@matrix-widget-toolkit/api';
+import { BehaviorSubject, filter, Subject, takeUntil } from 'rxjs';
+
 import {
   isValidPlanningPokerCardEvent,
   PLANNING_POKER_CARD_EVENT,
   PlanningPokerCardEvent,
-} from "../events/planningPokerCard";
+} from '../events/planningPokerCard';
 import {
   isValidPlanningPokerRoundEvent,
   PLANNING_POKER_ROUND_EVENT,
   PlanningPokerRoundEvent,
-} from "../events/planningPokerRoundEvent";
+} from '../events/planningPokerRoundEvent';
 
 type PlanningPokerCard = {
   id: string;
@@ -30,19 +31,11 @@ export class PlanningPokerStore {
   public readonly planningPokerRoundEventSubject = new BehaviorSubject<
     StateEvent<PlanningPokerRoundEvent> | undefined
   >(undefined);
-  public readonly planningPokerCardsSubject = new BehaviorSubject<
-    PlanningPokerCard[]
-  >([]);
+  public readonly planningPokerCardsSubject = new BehaviorSubject<PlanningPokerCard[]>([]);
   public readonly activeSubject = new BehaviorSubject(false);
-  private planningPokerCards = new Map<
-    string,
-    Map<string, RoomEvent<PlanningPokerCardEvent>>
-  >();
+  private planningPokerCards = new Map<string, Map<string, RoomEvent<PlanningPokerCardEvent>>>();
 
-  private roomMembers = new Map<
-    string,
-    StateEvent<RoomMemberStateEventContent>
-  >();
+  private roomMembers = new Map<string, StateEvent<RoomMemberStateEventContent>>();
 
   constructor(private widgetApi: WidgetApi) {}
 
@@ -56,9 +49,7 @@ export class PlanningPokerStore {
     this.planningPokerCardsSubject.complete();
   }
 
-  private handlePlanningPokerRoundEvent = (
-    event: StateEvent<PlanningPokerRoundEvent>,
-  ) => {
+  private handlePlanningPokerRoundEvent = (event: StateEvent<PlanningPokerRoundEvent>) => {
     const currentEvent = this.planningPokerRoundEventSubject.getValue();
 
     if (currentEvent === undefined) {
@@ -76,13 +67,11 @@ export class PlanningPokerStore {
     }
 
     // Ignore older events
-    console.warn("Unhandled planning poker round event", event);
+    console.warn('Unhandled planning poker round event', event);
   };
 
-  private handlePlanningPokerCardEvent = (
-    event: RoomEvent<PlanningPokerCardEvent>,
-  ) => {
-    const planningPokerRoundId = event.content["m.relates_to"].event_id;
+  private handlePlanningPokerCardEvent = (event: RoomEvent<PlanningPokerCardEvent>) => {
+    const planningPokerRoundId = event.content['m.relates_to'].event_id;
     const planningPokerCardEvents: Map<
       string,
       RoomEvent<PlanningPokerCardEvent>
@@ -90,44 +79,30 @@ export class PlanningPokerStore {
 
     const existingEvent = planningPokerCardEvents.get(event.sender);
 
-    if (
-      existingEvent === undefined ||
-      existingEvent.origin_server_ts < event.origin_server_ts
-    ) {
+    if (existingEvent === undefined || existingEvent.origin_server_ts < event.origin_server_ts) {
       planningPokerCardEvents.set(event.sender, event);
-      this.planningPokerCards.set(
-        planningPokerRoundId,
-        planningPokerCardEvents,
-      );
+      this.planningPokerCards.set(planningPokerRoundId, planningPokerCardEvents);
       this.emitCards();
       return;
     }
   };
 
   private observeEvents() {
-    this.planningPokerRoundEventSubject
-      .pipe(takeUntil(this.destroySubject))
-      .subscribe((event) => {
-        this.activeSubject.next(event?.content.active === true);
-      });
+    this.planningPokerRoundEventSubject.pipe(takeUntil(this.destroySubject)).subscribe((event) => {
+      this.activeSubject.next(event?.content.active === true);
+    });
 
     this.widgetApi
       .observeStateEvents(PLANNING_POKER_ROUND_EVENT)
-      .pipe(
-        takeUntil(this.destroySubject),
-        filter(isValidPlanningPokerRoundEvent),
-      )
+      .pipe(takeUntil(this.destroySubject), filter(isValidPlanningPokerRoundEvent))
       .subscribe(this.handlePlanningPokerRoundEvent);
 
     this.widgetApi
       .observeRoomEvents(PLANNING_POKER_CARD_EVENT)
-      .pipe(
-        takeUntil(this.destroySubject),
-        filter(isValidPlanningPokerCardEvent),
-      )
+      .pipe(takeUntil(this.destroySubject), filter(isValidPlanningPokerCardEvent))
       .subscribe(this.handlePlanningPokerCardEvent);
     this.widgetApi
-      .observeStateEvents("m.room.member")
+      .observeStateEvents('m.room.member')
       .pipe(takeUntil(this.destroySubject), filter(isValidRoomMemberStateEvent))
       .subscribe((event) => {
         this.roomMembers.set(event.state_key, event);
@@ -136,8 +111,7 @@ export class PlanningPokerStore {
   }
 
   private emitCards() {
-    const planningPokerRoundEvent =
-      this.planningPokerRoundEventSubject.getValue();
+    const planningPokerRoundEvent = this.planningPokerRoundEventSubject.getValue();
 
     if (planningPokerRoundEvent === undefined) {
       // No active round
@@ -146,45 +120,38 @@ export class PlanningPokerStore {
     }
 
     if (planningPokerRoundEvent.content.active === true) {
-      const eventsMap: Map<
-        string,
-        RoomEvent<PlanningPokerCardEvent>
-      > = this.planningPokerCards.get(planningPokerRoundEvent.event_id) ??
-      new Map();
+      const eventsMap: Map<string, RoomEvent<PlanningPokerCardEvent>> = this.planningPokerCards.get(
+        planningPokerRoundEvent.event_id,
+      ) ?? new Map();
 
       const events = Array.from(eventsMap.values());
 
       // Emit cards for current round
-      this.planningPokerCardsSubject.next(
-        events.map((e) => mapToCard(e, this.roomMembers)),
-      );
+      this.planningPokerCardsSubject.next(events.map((e) => mapToCard(e, this.roomMembers)));
       return;
     }
 
     // Round ended. Emit events for previous round.
     if (
-      "unsigned" in planningPokerRoundEvent &&
-      typeof planningPokerRoundEvent.unsigned === "object" &&
+      'unsigned' in planningPokerRoundEvent &&
+      typeof planningPokerRoundEvent.unsigned === 'object' &&
       planningPokerRoundEvent.unsigned !== null &&
-      "replaces_state" in planningPokerRoundEvent.unsigned &&
-      typeof planningPokerRoundEvent.unsigned.replaces_state === "string"
+      'replaces_state' in planningPokerRoundEvent.unsigned &&
+      typeof planningPokerRoundEvent.unsigned.replaces_state === 'string'
     ) {
       const roundId = planningPokerRoundEvent.unsigned.replaces_state;
-      const eventsMap: Map<
-        string,
-        RoomEvent<PlanningPokerCardEvent>
-      > = this.planningPokerCards.get(roundId) ?? new Map();
+      const eventsMap: Map<string, RoomEvent<PlanningPokerCardEvent>> = this.planningPokerCards.get(
+        roundId,
+      ) ?? new Map();
 
       const events = Array.from(eventsMap.values());
 
       // Emit cards for current round
-      this.planningPokerCardsSubject.next(
-        events.map((e) => mapToCard(e, this.roomMembers)),
-      );
+      this.planningPokerCardsSubject.next(events.map((e) => mapToCard(e, this.roomMembers)));
       return;
     }
 
-    console.warn("Unhandled planning poker round state");
+    console.warn('Unhandled planning poker round state');
   }
 }
 

@@ -17,6 +17,11 @@ export default defineConfig({
     },
   },
   fmt: {
+    sortImports: {},
     ignorePatterns: ['dist/**', 'README.md', 'LICENSE'],
+    semi: true,
+    singleQuote: true,
+    jsxSingleQuote: true,
+    printWidth: 100,
   },
 });

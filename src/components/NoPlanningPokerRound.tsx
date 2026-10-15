@@ -1,8 +1,9 @@
-import { Button } from "@mui/material";
-import { t } from "i18next";
-import React from "react";
-import { PLANNING_POKER_ROUND_EVENT } from "../events/planningPokerRoundEvent";
-import { useWidgetApi } from "@matrix-widget-toolkit/react";
+import { useWidgetApi } from '@matrix-widget-toolkit/react';
+import { Button } from '@mui/material';
+import { t } from 'i18next';
+import React from 'react';
+
+import { PLANNING_POKER_ROUND_EVENT } from '../events/planningPokerRoundEvent';
 
 export const NoPlanningPokerRound: React.FC = () => {
   const widgetApi = useWidgetApi();
@@ -15,8 +16,10 @@ export const NoPlanningPokerRound: React.FC = () => {
 
   return (
     <div>
-      {t("No planning poker round, yet")}
-      <Button onClick={sendStartEvent} variant="outlined">{t("new round")}</Button>
+      {t('No planning poker round, yet')}
+      <Button onClick={sendStartEvent} variant='outlined'>
+        {t('new round')}
+      </Button>
     </div>
   );
 };

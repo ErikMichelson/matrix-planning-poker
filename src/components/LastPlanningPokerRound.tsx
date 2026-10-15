@@ -1,17 +1,11 @@
-import { useWidgetApi } from "@matrix-widget-toolkit/react";
-import {
-  Avatar,
-  Button,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-} from "@mui/material";
-import React from "react";
-import { PLANNING_POKER_ROUND_EVENT } from "../events/planningPokerRoundEvent";
-import { PlanningPokerStore } from "../stores/PlanningPokerStore";
-import { useSubject } from "../stores/useSubject";
-import { t } from "i18next";
+import { useWidgetApi } from '@matrix-widget-toolkit/react';
+import { Avatar, Button, List, ListItem, ListItemAvatar, ListItemText } from '@mui/material';
+import { t } from 'i18next';
+import React from 'react';
+
+import { PLANNING_POKER_ROUND_EVENT } from '../events/planningPokerRoundEvent';
+import { PlanningPokerStore } from '../stores/PlanningPokerStore';
+import { useSubject } from '../stores/useSubject';
 
 type LastPlanningPokerRoundProps = {
   planningPokerStore: PlanningPokerStore;
@@ -26,7 +20,7 @@ export const LastPlanningPokerRound: React.FC<LastPlanningPokerRoundProps> = ({
     return (
       <ListItem key={c.id}>
         <ListItemAvatar>
-          <Avatar variant="square">{c.value}</Avatar>
+          <Avatar variant='square'>{c.value}</Avatar>
         </ListItemAvatar>
         <ListItemText
           primary={c.displayName}
@@ -47,8 +41,8 @@ export const LastPlanningPokerRound: React.FC<LastPlanningPokerRoundProps> = ({
       <div>
         <List>{cardElements}</List>
       </div>
-      <Button onClick={sendStartEvent} variant="outlined">
-        {t("new round")}
+      <Button onClick={sendStartEvent} variant='outlined'>
+        {t('new round')}
       </Button>
     </div>
   );

@@ -1,10 +1,11 @@
-import { useWidgetApi } from "@matrix-widget-toolkit/react";
-import { useEffect, useMemo } from "react";
-import { PlanningPokerStore } from "../stores/PlanningPokerStore";
-import { useSubject } from "../stores/useSubject";
-import { ActivePlanningPokerRound } from "./ActivePlanningPokerRound";
-import { LastPlanningPokerRound } from "./LastPlanningPokerRound";
-import { NoPlanningPokerRound } from "./NoPlanningPokerRound";
+import { useWidgetApi } from '@matrix-widget-toolkit/react';
+import { useEffect, useMemo } from 'react';
+
+import { PlanningPokerStore } from '../stores/PlanningPokerStore';
+import { useSubject } from '../stores/useSubject';
+import { ActivePlanningPokerRound } from './ActivePlanningPokerRound';
+import { LastPlanningPokerRound } from './LastPlanningPokerRound';
+import { NoPlanningPokerRound } from './NoPlanningPokerRound';
 
 export const PlanningPoker = () => {
   const widgetApi = useWidgetApi();
@@ -26,10 +27,7 @@ export const PlanningPoker = () => {
 
   if (round?.content.active === true) {
     return (
-      <ActivePlanningPokerRound
-        planningPokerStore={planningPokerStore}
-        roundId={round.event_id}
-      />
+      <ActivePlanningPokerRound planningPokerStore={planningPokerStore} roundId={round.event_id} />
     );
   }
 

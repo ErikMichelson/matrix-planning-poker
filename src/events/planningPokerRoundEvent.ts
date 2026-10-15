@@ -1,5 +1,6 @@
 import { StateEvent } from '@matrix-widget-toolkit/api';
 import Joi from 'joi';
+
 import { isValidEvent } from './validation';
 
 export const PLANNING_POKER_ROUND_EVENT = 'weeman.planning_poker_round';

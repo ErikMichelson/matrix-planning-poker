@@ -1,5 +1,5 @@
-import { RoomEvent, StateEvent } from "@matrix-widget-toolkit/api";
-import Joi from "joi";
+import { RoomEvent, StateEvent } from '@matrix-widget-toolkit/api';
+import Joi from 'joi';
 
 export function isValidEvent(
   event: RoomEvent<unknown> | StateEvent<unknown>,
@@ -10,7 +10,7 @@ export function isValidEvent(
     return false;
   }
 
-  if (!event.content || typeof event.content !== "object") {
+  if (!event.content || typeof event.content !== 'object') {
     return false;
   }
 
