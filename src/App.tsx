@@ -5,7 +5,6 @@ import {
 } from "@matrix-widget-toolkit/mui";
 import { Box } from "@mui/material";
 import { Suspense } from "react";
-import "./App.css";
 import { PlanningPoker } from "./components/PlanningPoker";
 
 type AppParams = {

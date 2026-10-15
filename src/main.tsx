@@ -6,7 +6,6 @@ import { App } from "./App.tsx";
 import { PLANNING_POKER_CARD_EVENT } from "./events/planningPokerCard.ts";
 import { PLANNING_POKER_ROUND_EVENT } from "./events/planningPokerRoundEvent.ts";
 import "./i18n";
-import "./index.css";
 
 const widgetApiPromise = WidgetApiImpl.create({
   // You can specify which capabilities should be requested at startup. One
