@@ -3,9 +3,9 @@ import { Avatar, Button, List, ListItem, ListItemAvatar, ListItemText } from '@m
 import { t } from 'i18next';
 import React from 'react';
 
-import { PLANNING_POKER_ROUND_EVENT } from '../events/planningPokerRoundEvent';
-import { PlanningPokerStore } from '../stores/PlanningPokerStore';
-import { useSubject } from '../stores/useSubject';
+import { PLANNING_POKER_ROUND_EVENT } from '../events/planning-poker-round-event';
+import { PlanningPokerStore } from '../stores/planning-poker-store';
+import { useSubject } from '../stores/use-subject';
 
 type LastPlanningPokerRoundProps = {
   planningPokerStore: PlanningPokerStore;

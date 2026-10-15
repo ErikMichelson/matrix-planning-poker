@@ -3,7 +3,7 @@ import { MuiThemeProvider, MuiWidgetApiProvider } from '@matrix-widget-toolkit/m
 import { Box } from '@mui/material';
 import { Suspense } from 'react';
 
-import { PlanningPoker } from './components/PlanningPoker';
+import { PlanningPoker } from './components/planning-poker';
 
 type AppParams = {
   widgetApiPromise: Promise<WidgetApi>;

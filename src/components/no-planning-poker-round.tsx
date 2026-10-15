@@ -3,7 +3,7 @@ import { Button } from '@mui/material';
 import { t } from 'i18next';
 import React from 'react';
 
-import { PLANNING_POKER_ROUND_EVENT } from '../events/planningPokerRoundEvent';
+import { PLANNING_POKER_ROUND_EVENT } from '../events/planning-poker-round-event';
 
 export const NoPlanningPokerRound: React.FC = () => {
   const widgetApi = useWidgetApi();

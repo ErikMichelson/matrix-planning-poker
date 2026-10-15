@@ -3,9 +3,9 @@ import { EventDirection, WidgetEventCapability } from 'matrix-widget-api';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 
-import { App } from './App.tsx';
-import { PLANNING_POKER_CARD_EVENT } from './events/planningPokerCard.ts';
-import { PLANNING_POKER_ROUND_EVENT } from './events/planningPokerRoundEvent.ts';
+import { App } from './app.tsx';
+import { PLANNING_POKER_CARD_EVENT } from './events/planning-poker-card.ts';
+import { PLANNING_POKER_ROUND_EVENT } from './events/planning-poker-round-event.ts';
 import './i18n';
 
 const widgetApiPromise = WidgetApiImpl.create({

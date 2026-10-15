@@ -12,12 +12,12 @@ import {
   isValidPlanningPokerCardEvent,
   PLANNING_POKER_CARD_EVENT,
   PlanningPokerCardEvent,
-} from '../events/planningPokerCard';
+} from '../events/planning-poker-card';
 import {
   isValidPlanningPokerRoundEvent,
   PLANNING_POKER_ROUND_EVENT,
   PlanningPokerRoundEvent,
-} from '../events/planningPokerRoundEvent';
+} from '../events/planning-poker-round-event';
 
 type PlanningPokerCard = {
   id: string;

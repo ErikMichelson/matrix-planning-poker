@@ -4,10 +4,10 @@ import { Avatar, Box, Button, ListItem, ListItemAvatar, ListItemText } from '@mu
 import { t } from 'i18next';
 import React from 'react';
 
-import { PLANNING_POKER_CARD_EVENT } from '../events/planningPokerCard';
-import { PLANNING_POKER_ROUND_EVENT } from '../events/planningPokerRoundEvent';
-import { PlanningPokerStore } from '../stores/PlanningPokerStore';
-import { useSubject } from '../stores/useSubject';
+import { PLANNING_POKER_CARD_EVENT } from '../events/planning-poker-card';
+import { PLANNING_POKER_ROUND_EVENT } from '../events/planning-poker-round-event';
+import { PlanningPokerStore } from '../stores/planning-poker-store';
+import { useSubject } from '../stores/use-subject';
 
 type ActivePlanningPokerRoundProps = {
   planningPokerStore: PlanningPokerStore;

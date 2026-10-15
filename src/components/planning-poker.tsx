@@ -1,11 +1,11 @@
 import { useWidgetApi } from '@matrix-widget-toolkit/react';
 import { useEffect, useMemo } from 'react';
 
-import { PlanningPokerStore } from '../stores/PlanningPokerStore';
-import { useSubject } from '../stores/useSubject';
-import { ActivePlanningPokerRound } from './ActivePlanningPokerRound';
-import { LastPlanningPokerRound } from './LastPlanningPokerRound';
-import { NoPlanningPokerRound } from './NoPlanningPokerRound';
+import { PlanningPokerStore } from '../stores/planning-poker-store';
+import { useSubject } from '../stores/use-subject';
+import { ActivePlanningPokerRound } from './active-planning-poker-round';
+import { LastPlanningPokerRound } from './last-planning-poker-round';
+import { NoPlanningPokerRound } from './no-planning-poker-round';
 
 export const PlanningPoker = () => {
   const widgetApi = useWidgetApi();
