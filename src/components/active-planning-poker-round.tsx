@@ -3,7 +3,11 @@ import { Box, Button } from '@mui/material';
 import { t } from 'i18next';
 import React from 'react';
 
-import { PLANNING_POKER_CARD_EVENT } from '../events/planning-poker-card';
+import {
+  PLANNING_POKER_CARD_EVENT,
+  PLANNING_POKER_CARD_VALUES,
+  type PlanningPokerCardEvent,
+} from '../events/planning-poker-card';
 import { PLANNING_POKER_ROUND_EVENT } from '../events/planning-poker-round-event';
 import { PlanningPokerStore } from '../stores/planning-poker-store';
 import { useSubject } from '../stores/use-subject';
@@ -21,20 +25,19 @@ export const ActivePlanningPokerRound: React.FC<ActivePlanningPokerRoundProps> =
   const widgetApi = useWidgetApi();
   const cards = useSubject(planningPokerStore.planningPokerCardsSubject);
   const myCard = cards.find((c) => c.sender === widgetApi.widgetParameters.userId);
-  const sendCardValues = [0, 0.5, 1, 2, 3, 5, 8, 13, 20, '🤷', '☕'];
-  const sendCardElements = sendCardValues.map((c) => {
+  const sendCardElements = PLANNING_POKER_CARD_VALUES.map((value) => {
     return (
       <Button
-        key={c}
-        onClick={() => sendCardEvent(c.toString())}
-        variant={myCard?.value === c.toString() ? 'contained' : 'outlined'}
+        key={value}
+        onClick={() => sendCardEvent(value)}
+        variant={myCard?.value === value ? 'contained' : 'outlined'}
       >
-        {c}
+        {value}
       </Button>
     );
   });
 
-  const sendCardEvent = (value: string) => {
+  const sendCardEvent = (value: PlanningPokerCardEvent['value']) => {
     void widgetApi.sendRoomEvent(PLANNING_POKER_CARD_EVENT, {
       value,
       'm.relates_to': {

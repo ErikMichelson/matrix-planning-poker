@@ -193,9 +193,6 @@ importers:
       i18next-http-backend:
         specifier: 2.7.3
         version: 2.7.3
-      joi:
-        specifier: 17.13.8
-        version: 17.13.8
       matrix-widget-api:
         specifier: 1.20.0
         version: 1.20.0
@@ -211,6 +208,9 @@ importers:
       rxjs:
         specifier: 7.8.2
         version: 7.8.2
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
     devDependencies:
       '@commitlint/cli':
         specifier: 21.2.3
@@ -2918,6 +2918,9 @@ packages:
     resolution: {integrity: sha512-XrBh9ZiQK5mJVRxZBAvD6LwRyAYrK3MFtH3+onyuxFL5hFD44EC3QOmIC1FjTj6H2MMwq46/NAI+NZxLZPZgxg==}
     engines: {node: '>=14.18.0'}
 
+  zod@4.6.7:
+    resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
+
 ignoredOptionalDependencies:
   - fallow-type-aware
 
@@ -5546,3 +5549,5 @@ snapshots:
     dependencies:
       '@yuku-toolchain/types': 0.19.0
       yuku-core: 0.19.0
+
+  zod@4.6.7: {}
