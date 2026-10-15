@@ -3,6 +3,10 @@ import { defineConfig, lazyPlugins } from 'vite-plus';
 
 export default defineConfig({
   plugins: lazyPlugins(() => [react()]),
+  define: {
+    // The toolkit dynamically reads CRA-style variables; use its defaults in the browser.
+    'process.env': '{}',
+  },
   lint: {
     ignorePatterns: ['dist/**'],
     plugins: ['typescript', 'react'],
