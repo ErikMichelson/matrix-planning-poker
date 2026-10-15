@@ -19,7 +19,7 @@ import {
   PlanningPokerRoundEvent,
 } from '../events/planning-poker-round-event';
 
-type PlanningPokerCard = {
+export type PlanningPokerCard = {
   id: string;
   sender: string;
   displayName: string;

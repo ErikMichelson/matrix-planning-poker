@@ -1,6 +1,5 @@
 import { useWidgetApi } from '@matrix-widget-toolkit/react';
-import CheckIcon from '@mui/icons-material/Check';
-import { Avatar, Box, Button, ListItem, ListItemAvatar, ListItemText } from '@mui/material';
+import { Box, Button } from '@mui/material';
 import { t } from 'i18next';
 import React from 'react';
 
@@ -8,6 +7,7 @@ import { PLANNING_POKER_CARD_EVENT } from '../events/planning-poker-card';
 import { PLANNING_POKER_ROUND_EVENT } from '../events/planning-poker-round-event';
 import { PlanningPokerStore } from '../stores/planning-poker-store';
 import { useSubject } from '../stores/use-subject';
+import { PlanningPokerCards } from './planning-poker-cards';
 
 type ActivePlanningPokerRoundProps = {
   planningPokerStore: PlanningPokerStore;
@@ -31,22 +31,6 @@ export const ActivePlanningPokerRound: React.FC<ActivePlanningPokerRoundProps> =
       >
         {c}
       </Button>
-    );
-  });
-
-  const cardElements = cards.map((c) => {
-    return (
-      <ListItem key={c.id}>
-        <ListItemAvatar>
-          <Avatar variant='square'>
-            <CheckIcon />
-          </Avatar>
-        </ListItemAvatar>
-        <ListItemText
-          primary={c.displayName}
-          secondary={c.displayName !== c.sender ? c.sender : undefined}
-        />
-      </ListItem>
     );
   });
 
@@ -78,7 +62,9 @@ export const ActivePlanningPokerRound: React.FC<ActivePlanningPokerRoundProps> =
       >
         {sendCardElements}
       </Box>
-      <Box>{cardElements}</Box>
+      <Box>
+        <PlanningPokerCards cards={cards} />
+      </Box>
       <Button onClick={sendStopEvent} variant='contained'>
         {t('reveal')}
       </Button>
