@@ -6,6 +6,9 @@ overrides:
   # The toolkit and app must share the same i18n singleton and React context.
   i18next: 26.4.5
   react-i18next: 17.0.16
+  # Use the app's React runtime for the toolkit's React 18-only peer declarations.
+  '@matrix-widget-toolkit/react@2.1.2>react': 19.3.1
+  '@matrix-widget-toolkit/mui@2.2.2>react': 19.3.1
 
 peerDependencyRules:
   allowedVersions:
@@ -17,3 +20,5 @@ ignoredOptionalDependencies:
 
 minimumReleaseAgeExclude:
   - i18next@26.4.5
+  - react-dom@19.3.1
+  - react@19.3.1

@@ -1,4 +1,4 @@
-import CheckIcon from '@mui/icons-material/Check';
+import { Check as CheckIcon } from '@mui/icons-material';
 import { Avatar, ListItem, ListItemAvatar, ListItemText } from '@mui/material';
 import type React from 'react';
 
