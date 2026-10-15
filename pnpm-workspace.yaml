@@ -10,3 +10,7 @@ peerDependencyRules:
 
 allowBuilds:
   esbuild: true
+
+# The semantic companion is opt-in and is not used by our Fallow checks.
+ignoredOptionalDependencies:
+  - fallow-type-aware

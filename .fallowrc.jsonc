@@ -1,0 +1,7 @@
+{
+  "$schema": "./node_modules/fallow/schema.json",
+  // Vite+ and the translation parser configs need explicit tooling entry points.
+  "entry": ["src/main.tsx", "vite.config.ts", "i18next-parser.config.js"],
+  // Translation extraction scans these files as data; it does not execute them.
+  "ignoreCommandEntries": ["i18next"],
+}

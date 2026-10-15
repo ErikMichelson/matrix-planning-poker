@@ -45,8 +45,6 @@ export class PlanningPokerStore {
 
   public destroy() {
     this.destroySubject.next();
-    this.planningPokerRoundEventSubject.complete();
-    this.planningPokerCardsSubject.complete();
   }
 
   private handlePlanningPokerRoundEvent = (event: StateEvent<PlanningPokerRoundEvent>) => {
@@ -119,41 +117,35 @@ export class PlanningPokerStore {
       return;
     }
 
-    if (planningPokerRoundEvent.content.active === true) {
-      const eventsMap: Map<string, RoomEvent<PlanningPokerCardEvent>> = this.planningPokerCards.get(
-        planningPokerRoundEvent.event_id,
-      ) ?? new Map();
-
-      const events = Array.from(eventsMap.values());
-
-      // Emit cards for current round
-      this.planningPokerCardsSubject.next(events.map((e) => mapToCard(e, this.roomMembers)));
+    const roundId = getRoundId(planningPokerRoundEvent);
+    if (roundId === undefined) {
+      console.warn('Unhandled planning poker round state');
       return;
     }
 
-    // Round ended. Emit events for previous round.
-    if (
-      'unsigned' in planningPokerRoundEvent &&
-      typeof planningPokerRoundEvent.unsigned === 'object' &&
-      planningPokerRoundEvent.unsigned !== null &&
-      'replaces_state' in planningPokerRoundEvent.unsigned &&
-      typeof planningPokerRoundEvent.unsigned.replaces_state === 'string'
-    ) {
-      const roundId = planningPokerRoundEvent.unsigned.replaces_state;
-      const eventsMap: Map<string, RoomEvent<PlanningPokerCardEvent>> = this.planningPokerCards.get(
-        roundId,
-      ) ?? new Map();
-
-      const events = Array.from(eventsMap.values());
-
-      // Emit cards for current round
-      this.planningPokerCardsSubject.next(events.map((e) => mapToCard(e, this.roomMembers)));
-      return;
-    }
-
-    console.warn('Unhandled planning poker round state');
+    const eventsMap =
+      this.planningPokerCards.get(roundId) ?? new Map<string, RoomEvent<PlanningPokerCardEvent>>();
+    const events = Array.from(eventsMap.values());
+    this.planningPokerCardsSubject.next(events.map((event) => mapToCard(event, this.roomMembers)));
   }
 }
+
+const getRoundId = (event: StateEvent<PlanningPokerRoundEvent>): string | undefined => {
+  if (event.content.active) {
+    return event.event_id;
+  }
+
+  return getReplacedRoundId('unsigned' in event ? event.unsigned : undefined);
+};
+
+const getReplacedRoundId = (unsigned: unknown): string | undefined => {
+  if (typeof unsigned !== 'object' || unsigned === null) {
+    return undefined;
+  }
+
+  const roundId: unknown = Reflect.get(unsigned, 'replaces_state');
+  return typeof roundId === 'string' ? roundId : undefined;
+};
 
 const mapToCard = (
   event: RoomEvent<PlanningPokerCardEvent>,

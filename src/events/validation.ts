@@ -16,9 +16,5 @@ export function isValidEvent(
 
   const result = schema.validate(event.content);
 
-  if (result.error) {
-    return false;
-  }
-
-  return true;
+  return result.error === undefined;
 }

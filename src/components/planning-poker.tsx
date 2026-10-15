@@ -10,16 +10,15 @@ import { NoPlanningPokerRound } from './no-planning-poker-round';
 export const PlanningPoker = () => {
   const widgetApi = useWidgetApi();
 
-  const planningPokerStore = useMemo(() => {
-    const store = new PlanningPokerStore(widgetApi);
-    store.start();
-    return store;
-  }, [widgetApi]);
+  const planningPokerStore: PlanningPokerStore = useMemo(
+    () => new PlanningPokerStore(widgetApi),
+    [widgetApi],
+  );
 
   useEffect(() => {
+    planningPokerStore.start();
     return () => {
-      // to-do
-      // planningPokerStore.destroy();
+      planningPokerStore.destroy();
     };
   }, [planningPokerStore]);
 
