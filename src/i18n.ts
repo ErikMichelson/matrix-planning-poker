@@ -1,31 +1,41 @@
-import i18n from 'i18next';
-import ChainedBackend from 'i18next-chained-backend';
-import HttpBackend from 'i18next-http-backend';
+import { extractWidgetParameters } from '@matrix-widget-toolkit/api';
+import i18n, { type LanguageDetectorModule } from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
-import { setLocale } from './lib/locale';
+// The pinned toolkit ships these resources but does not export their paths.
+import toolkitDe from '../node_modules/@matrix-widget-toolkit/mui/build/locales/de/widget-toolkit.json';
+import toolkitEn from '../node_modules/@matrix-widget-toolkit/mui/build/locales/en/widget-toolkit.json';
+import de from './locales/de/translation.json';
+import en from './locales/en/translation.json';
+
+const languageDetector: LanguageDetectorModule = {
+  type: 'languageDetector',
+  detect: () => {
+    const { clientLanguage } = extractWidgetParameters();
+    return clientLanguage ? [clientLanguage, ...navigator.languages] : [...navigator.languages];
+  },
+};
+
+i18n.on('languageChanged', (language) => {
+  document.documentElement.lang = language;
+});
 
 void i18n
-  .use(ChainedBackend)
+  .use(languageDetector)
   .use(initReactI18next)
   .init({
-    backend: {
-      backends: [HttpBackend],
-      backendOptions: [{ loadPath: `/locales/{{lng}}/{{ns}}.json` }],
+    resources: {
+      en: { translation: en, 'widget-toolkit': toolkitEn },
+      de: { translation: de, 'widget-toolkit': toolkitDe },
     },
-    debug: import.meta.env.NODE_ENV === 'development',
+    initAsync: false,
+    ns: ['translation', 'widget-toolkit'],
     fallbackLng: 'en',
-    interpolation: {
-      escapeValue: false, // not needed for react as it escapes by default
-    },
     supportedLngs: ['en', 'de'],
-    nonExplicitSupportedLngs: true,
+    load: 'languageOnly',
+    interpolation: {
+      escapeValue: false,
+    },
   });
-
-setLocale(i18n.language);
-
-i18n.on('languageChanged', () => {
-  setLocale(i18n.language);
-});
 
 export default i18n;

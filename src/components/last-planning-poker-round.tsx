@@ -1,7 +1,7 @@
 import { useWidgetApi } from '@matrix-widget-toolkit/react';
 import { Button, List } from '@mui/material';
-import { t } from 'i18next';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { PLANNING_POKER_ROUND_EVENT } from '../events/planning-poker-round-event';
 import { PlanningPokerStore } from '../stores/planning-poker-store';
@@ -16,6 +16,7 @@ export const LastPlanningPokerRound: React.FC<LastPlanningPokerRoundProps> = ({
   planningPokerStore,
 }) => {
   const widgetApi = useWidgetApi();
+  const { t } = useTranslation();
   const cards = useSubject(planningPokerStore.planningPokerCardsSubject);
   const sendStartEvent = () => {
     void widgetApi.sendStateEvent(PLANNING_POKER_ROUND_EVENT, {
@@ -31,7 +32,7 @@ export const LastPlanningPokerRound: React.FC<LastPlanningPokerRoundProps> = ({
         </List>
       </div>
       <Button onClick={sendStartEvent} variant='outlined'>
-        {t('new round')}
+        {t('action.startNewRound')}
       </Button>
     </div>
   );

@@ -1,5 +1,9 @@
 {
-  "new round": "",
-  "No planning poker round, yet": "",
-  "reveal": ""
+  "action": {
+    "startNewRound": "Start new round",
+    "reveal": "Reveal"
+  },
+  "info": {
+    "noActiveRound": "There's no active planning poker round yet."
+  }
 }

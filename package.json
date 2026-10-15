@@ -7,8 +7,7 @@
     "dev": "vp dev",
     "build": "vp check && vp build",
     "check": "vp check && fallow --fail-on-issues && commitlint --last",
-    "fix": "vp check --fix",
-    "translate": "i18next \"src/**/*.{ts,tsx}\""
+    "fix": "vp check --fix"
   },
   "dependencies": {
     "@matrix-widget-toolkit/api": "5.1.0",
@@ -16,13 +15,11 @@
     "@matrix-widget-toolkit/react": "2.1.2",
     "@mui/icons-material": "5.18.0",
     "@mui/material": "5.18.0",
-    "i18next": "23.16.8",
-    "i18next-chained-backend": "4.6.3",
-    "i18next-http-backend": "2.7.3",
+    "i18next": "26.4.5",
     "matrix-widget-api": "1.20.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "react-i18next": "14.1.3",
+    "react-i18next": "17.0.16",
     "rxjs": "7.8.2",
     "zod": "4.6.7"
   },
@@ -34,7 +31,6 @@
     "@types/react-dom": "18.3.3",
     "@vitejs/plugin-react": "6.1.2",
     "fallow": "3.33.1",
-    "i18next-parser": "9.4.0",
     "vite-plus": "1.2.0"
   },
   "engines": {

@@ -1,7 +1,7 @@
 import { useWidgetApi } from '@matrix-widget-toolkit/react';
 import { Box, Button } from '@mui/material';
-import { t } from 'i18next';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 import {
   PLANNING_POKER_CARD_EVENT,
@@ -23,6 +23,7 @@ export const ActivePlanningPokerRound: React.FC<ActivePlanningPokerRoundProps> =
   roundId,
 }) => {
   const widgetApi = useWidgetApi();
+  const { t } = useTranslation();
   const cards = useSubject(planningPokerStore.planningPokerCardsSubject);
   const myCard = cards.find((c) => c.sender === widgetApi.widgetParameters.userId);
   const sendCardElements = PLANNING_POKER_CARD_VALUES.map((value) => {
@@ -69,7 +70,7 @@ export const ActivePlanningPokerRound: React.FC<ActivePlanningPokerRoundProps> =
         <PlanningPokerCards cards={cards} />
       </Box>
       <Button onClick={sendStopEvent} variant='contained'>
-        {t('reveal')}
+        {t('action.reveal')}
       </Button>
     </>
   );

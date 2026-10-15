@@ -3,14 +3,17 @@ packages:
 
 overrides:
   vite: npm:@voidzero-dev/vite-plus-core@1.2.0
+  # The toolkit and app must share the same i18n singleton and React context.
+  i18next: 26.4.5
+  react-i18next: 17.0.16
 
 peerDependencyRules:
   allowedVersions:
     vite: '*'
 
-allowBuilds:
-  esbuild: true
-
 # The semantic companion is opt-in and is not used by our Fallow checks.
 ignoredOptionalDependencies:
   - fallow-type-aware
+
+minimumReleaseAgeExclude:
+  - i18next@26.4.5
