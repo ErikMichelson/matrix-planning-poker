@@ -1,9 +1,28 @@
 {
+  "heading": {
+    "planningPoker": "Planning Poker"
+  },
   "action": {
     "startNewRound": "Neue Runde starten",
-    "reveal": "Aufdecken"
+    "reveal": "Ergebnisse aufdecken",
+    "cancel": "Abbrechen"
   },
   "info": {
-    "noActiveRound": "Es ist noch keine Planning Poker Runde aktiv."
+    "noActiveRound": "Es ist noch keine Planning Poker Runde aktiv.",
+    "currentRound": "Aktuelle Runde:",
+    "unlabeledRound": "Keine Beschreibung angegeben",
+    "roundAlreadyActive": "Es ist bereits eine andere Runde aktiv."
+  },
+  "dialog": {
+    "newRoundTitle": "Eine neue Runde starten",
+    "newRoundDescription": "Optional kann ein Thema oder Link angegeben werden, damit alle wissen, was geschätzt werden soll. Eine neue Runde ersetzt die angezeigten Ergebnisse.",
+    "roundLabel": "Beschreibung der Runde (optional)"
+  },
+  "status": {
+    "startingRound": "Runde wird gestartet…",
+    "revealingResults": "Ergebnisse werden aufgedeckt…"
+  },
+  "error": {
+    "updateRound": "Die Runde konnte nicht aktualisiert werden. Bitte erneut versuchen."
   }
 }

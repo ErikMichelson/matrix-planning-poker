@@ -17,6 +17,8 @@
     "@mui/icons-material": "5.18.0",
     "@mui/material": "5.18.0",
     "i18next": "26.4.5",
+    "linkify-react": "4.3.3",
+    "linkifyjs": "4.3.3",
     "matrix-widget-api": "1.20.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",

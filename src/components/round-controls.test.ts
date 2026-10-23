@@ -1,0 +1,68 @@
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { expect, it, vi } from 'vite-plus/test';
+
+import { PlanningPokerRoundLabel } from './planning-poker-round-label';
+import { RoundActionButtons } from './round-action-buttons';
+
+vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
+
+it.each([
+  { active: false, pending: false, revealDisabled: true, startDisabled: false },
+  { active: true, pending: false, revealDisabled: false, startDisabled: true },
+  { active: false, pending: true, revealDisabled: true, startDisabled: true },
+  { active: true, pending: true, revealDisabled: true, startDisabled: true },
+])(
+  'keeps round action positions fixed for state %j',
+  ({ active, pending, revealDisabled, startDisabled }) => {
+    const html = renderToStaticMarkup(
+      createElement(RoundActionButtons, {
+        roundActive: active,
+        pending,
+        onReveal: vi.fn(),
+        onStart: vi.fn(),
+      }),
+    );
+    const buttons = html.match(/<button\b[^>]*>[\s\S]*?<\/button>/g) ?? [];
+
+    expect(buttons).toHaveLength(2);
+    expect(buttons[0]).toContain('action.reveal');
+    expect(buttons[1]).toContain('action.startNewRound');
+    expect(buttons[0]?.includes('disabled=""')).toBe(revealDisabled);
+    expect(buttons[1]?.includes('disabled=""')).toBe(startDisabled);
+    expect(html).toContain('flex:1');
+  },
+);
+
+it('linkifies round labels with safe external link attributes and preserves line breaks', () => {
+  const html = renderToStaticMarkup(
+    createElement(PlanningPokerRoundLabel, {
+      label: 'Estimate this:\nhttps://example.org/ticket/123 and example.com/story',
+    }),
+  );
+
+  expect(html).toContain('info.currentRound');
+  expect(html).toContain('href="https://example.org/ticket/123"');
+  expect(html).toContain('href="https://example.com/story"');
+  expect(html).toContain('target="_blank"');
+  expect(html).toContain('rel="noopener noreferrer"');
+  expect(html).toContain('white-space:pre-wrap');
+});
+
+it('treats round text as plain text and does not create unsafe-protocol links', () => {
+  const html = renderToStaticMarkup(
+    createElement(PlanningPokerRoundLabel, {
+      label: '<img src=x onerror=alert(1)> javascript:alert(1) ftp://example.org/file',
+    }),
+  );
+
+  expect(html).toContain('&lt;img');
+  expect(html).not.toContain('<img');
+  expect(html).not.toContain('href="javascript:');
+  expect(html).not.toContain('href="ftp:');
+});
+
+it('shows a clear placeholder for rounds without a label', () => {
+  const html = renderToStaticMarkup(createElement(PlanningPokerRoundLabel));
+  expect(html).toContain('info.unlabeledRound');
+});

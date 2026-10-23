@@ -26,32 +26,50 @@ export type PlanningPokerCard = {
   value: string;
 };
 
+export type RoundAction = 'start' | 'reveal';
+
 interface PlanningPokerState {
   round: StateEvent<PlanningPokerRoundEvent> | undefined;
   cards: readonly PlanningPokerCard[];
+  pendingRoundAction: RoundAction | undefined;
   connect: () => () => void;
+  startRound: (label?: string) => Promise<boolean>;
+  revealRound: () => Promise<boolean>;
 }
 
 export type PlanningPokerStore = StoreApi<PlanningPokerState>;
+
+interface PendingRoundAction {
+  content: PlanningPokerRoundEvent;
+  previousEventId: string | undefined;
+  observedEvents: Map<string, StateEvent<PlanningPokerRoundEvent>>;
+  acknowledged: boolean;
+  responseEventId?: string;
+  resolve: () => void;
+}
 
 interface PlanningPokerContext {
   widgetApi: WidgetApi;
   store: PlanningPokerStore;
   cardEvents: Map<string, Map<string, RoomEvent<PlanningPokerCardEvent>>>;
   roomMembers: Map<string, StateEvent<RoomMemberStateEventContent>>;
+  pendingRoundAction?: PendingRoundAction;
   disconnect?: () => void;
 }
 
 /**
  * Creates an isolated room store without subscribing during React rendering.
  * @param widgetApi The API for this widget's Matrix room.
- * @returns A vanilla Zustand store with a restartable connection.
+ * @returns A vanilla Zustand store with round actions and a restartable connection.
  */
 export const createPlanningPokerStore = (widgetApi: WidgetApi): PlanningPokerStore => {
   const store = createStore<PlanningPokerState>()(() => ({
     round: undefined,
     cards: [],
+    pendingRoundAction: undefined,
     connect: () => connect(context),
+    startRound: (label = '') => startRound(context, label),
+    revealRound: () => revealRound(context),
   }));
   const context: PlanningPokerContext = {
     widgetApi,
@@ -108,6 +126,97 @@ const connect = (context: PlanningPokerContext): (() => void) => {
 };
 
 /**
+ * Starts a round and waits for its state confirmation.
+ * @param context The room store and its event caches.
+ * @param label The round topic. If left blank it is omitted.
+ * @returns True when confirmed, or false if a round or action is already active.
+ * @throws Error If sending the state event fails.
+ */
+const startRound = (context: PlanningPokerContext, label: string): Promise<boolean> => {
+  if (context.store.getState().round?.content.active === true) {
+    return Promise.resolve(false);
+  }
+  const trimmedLabel = label.trim();
+  const content = trimmedLabel ? { active: true, label: trimmedLabel } : { active: true };
+  return sendRoundState(context, 'start', content);
+};
+
+/**
+ * Reveals the active round while preserving its label and other fields.
+ * @param context The room store and its event caches.
+ * @returns True when confirmed, or false if inactive or another action is pending.
+ * @throws Error If sending the state event fails.
+ */
+const revealRound = (context: PlanningPokerContext): Promise<boolean> => {
+  const round = context.store.getState().round;
+  if (round?.content.active !== true) {
+    return Promise.resolve(false);
+  }
+  return sendRoundState(context, 'reveal', { ...round.content, active: false });
+};
+
+/**
+ * Sends a state update and waits for both its response and matching event.
+ * @param context The room store and its event caches.
+ * @param kind The action shown as pending in the UI.
+ * @param content The round state to send.
+ * @returns True when confirmed, or false if another action is pending.
+ * @throws Error If sending the state event fails.
+ */
+const sendRoundState = (
+  context: PlanningPokerContext,
+  kind: RoundAction,
+  content: PlanningPokerRoundEvent,
+): Promise<boolean> => {
+  if (context.pendingRoundAction) {
+    return Promise.resolve(false);
+  }
+  return new Promise((resolve, reject) => {
+    const action: PendingRoundAction = {
+      content,
+      previousEventId: context.store.getState().round?.event_id,
+      observedEvents: new Map(),
+      acknowledged: false,
+      resolve: () => resolve(true),
+    };
+    context.pendingRoundAction = action;
+    context.store.setState({ pendingRoundAction: kind });
+    void Promise.resolve()
+      .then(() => context.widgetApi.sendStateEvent(PLANNING_POKER_ROUND_EVENT, content))
+      .then((response) => {
+        action.responseEventId = response.event_id;
+        action.acknowledged = true;
+        finishRoundAction(context);
+      })
+      .catch((error: unknown) => {
+        context.pendingRoundAction = undefined;
+        context.store.setState({ pendingRoundAction: undefined });
+        reject(error);
+      });
+  });
+};
+
+/**
+ * Clears a pending action once its response and matching event have arrived.
+ * @param context The room store and its event caches.
+ */
+const finishRoundAction = (context: PlanningPokerContext) => {
+  const action = context.pendingRoundAction;
+  if (!action?.acknowledged) {
+    return;
+  }
+  const received = action.responseEventId
+    ? action.observedEvents.has(action.responseEventId)
+    : [...action.observedEvents.values()].some((event) => matchesRoundAction(event, action));
+  if (!received) {
+    return;
+  }
+  context.pendingRoundAction = undefined;
+  context.store.setState({ pendingRoundAction: undefined });
+  action.resolve();
+};
+
+/**
  * Records action confirmations and applies newer round state.
  * @param context The room store and its event caches.
  * @param event The validated round event.
@@ -116,12 +225,16 @@ const receiveRound = (
   context: PlanningPokerContext,
   event: StateEvent<PlanningPokerRoundEvent>,
 ) => {
+  // A confirmation can arrive after another client has already advanced the room state.
+  context.pendingRoundAction?.observedEvents.set(event.event_id, event);
   const current = context.store.getState().round;
   if (current !== undefined && current.origin_server_ts >= event.origin_server_ts) {
     console.warn('Unhandled planning poker round event', event);
+    finishRoundAction(context);
     return;
   }
   context.store.setState({ round: event, cards: getCards(context, event) });
+  finishRoundAction(context);
 };
 
 /**
@@ -164,6 +277,20 @@ const getCards = (
     context.cardEvents.get(roundId) ?? new Map<string, RoomEvent<PlanningPokerCardEvent>>();
   return Array.from(events.values(), (event) => mapToCard(event, context.roomMembers));
 };
+
+/**
+ * Matches a confirmation when the send response contains no event ID.
+ * @param event The received round state.
+ * @param action The pending state update.
+ * @returns Whether a new event matches the requested active flag and label.
+ */
+const matchesRoundAction = (
+  event: StateEvent<PlanningPokerRoundEvent>,
+  action: PendingRoundAction,
+): boolean =>
+  event.event_id !== action.previousEventId &&
+  event.content.active === action.content.active &&
+  event.content.label === action.content.label;
 
 /**
  * Selects the event ID whose cards belong to the displayed round.

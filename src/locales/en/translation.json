@@ -1,9 +1,28 @@
 {
+  "heading": {
+    "planningPoker": "Planning Poker"
+  },
   "action": {
     "startNewRound": "Start new round",
-    "reveal": "Reveal"
+    "reveal": "Reveal results",
+    "cancel": "Cancel"
   },
   "info": {
-    "noActiveRound": "There's no active planning poker round yet."
+    "noActiveRound": "There's no active planning poker round yet.",
+    "currentRound": "Current round:",
+    "unlabeledRound": "No label provided",
+    "roundAlreadyActive": "Another round is already active."
+  },
+  "dialog": {
+    "newRoundTitle": "Start a new round",
+    "newRoundDescription": "Add an optional topic or link so everyone knows what to estimate. Starting a new round replaces the displayed results.",
+    "roundLabel": "Round label (optional)"
+  },
+  "status": {
+    "startingRound": "Starting round…",
+    "revealingResults": "Revealing results…"
+  },
+  "error": {
+    "updateRound": "The round could not be updated. Please try again."
   }
 }

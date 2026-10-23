@@ -3,7 +3,9 @@ import * as z from 'zod/mini';
 
 export const PLANNING_POKER_ROUND_EVENT = 'weeman.planning_poker_round';
 
-const planningPokerRoundEventSchema = z.compile(z.looseObject({ active: z.boolean() }));
+const planningPokerRoundEventSchema = z.compile(
+  z.looseObject({ active: z.boolean(), label: z.optional(z.string()) }),
+);
 
 export type PlanningPokerRoundEvent = z.infer<typeof planningPokerRoundEventSchema>;
 
