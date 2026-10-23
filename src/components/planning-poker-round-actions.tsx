@@ -21,6 +21,7 @@ export const PlanningPokerRoundActions: React.FC<PlanningPokerRoundActionsProps>
   const [dialogOpen, setDialogOpen] = useState(false);
   const [error, setError] = useState(false);
   const pending = useStore(store, (state) => state.pendingRoundAction);
+  const canModifyRounds = useStore(store, (state) => state.canModifyRounds);
   const reveal = () => {
     setError(false);
     void store
@@ -37,6 +38,7 @@ export const PlanningPokerRoundActions: React.FC<PlanningPokerRoundActionsProps>
       <RoundActionButtons
         roundActive={roundActive}
         pending={pending !== undefined}
+        canModifyRounds={canModifyRounds}
         onReveal={reveal}
         onStart={openDialog}
       />

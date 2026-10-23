@@ -41,12 +41,18 @@ beforeEach(() => {
   events = new Subject();
   sendStateEvent = vi.fn<WidgetApi['sendStateEvent']>();
   const widgetApi = {
+    widgetParameters: { userId: '@alice:example.org' },
     observeStateEvents: vi.fn().mockReturnValue(events),
     observeRoomEvents: vi.fn().mockReturnValue(EMPTY),
     sendStateEvent,
   } as unknown as WidgetApi;
   store = createPlanningPokerStore(widgetApi);
   disconnect = store.getState().connect();
+  events.next({
+    ...roundEvent('$power', { active: false }),
+    type: 'm.room.power_levels',
+    content: { users: { '@alice:example.org': 50 } },
+  });
 });
 
 afterEach(() => {
@@ -175,5 +181,18 @@ it('supports clients which acknowledge without returning an event ID', async () 
   events.next(roundEvent('$matching', { active: true, label: 'Expected topic' }, 2));
 
   expect(await request).toBe(true);
+  expect(store.getState().pendingRoundAction).toBeUndefined();
+});
+
+it('blocks starting and revealing if permission is revoked while the controls are open', async () => {
+  events.next({
+    ...roundEvent('$power-revoked', { active: false }),
+    type: 'm.room.power_levels',
+    content: { users: { '@alice:example.org': 0 } },
+  });
+  expect(await store.getState().startRound('Not allowed')).toBe(false);
+  events.next(roundEvent('$active', { active: true }));
+  expect(await store.getState().revealRound()).toBe(false);
+  expect(sendStateEvent).not.toHaveBeenCalled();
   expect(store.getState().pendingRoundAction).toBeUndefined();
 });

@@ -1,4 +1,4 @@
-import { useState, type SubmitEventHandler } from 'react';
+import { useState, type SubmitEventHandler, useCallback } from 'react';
 import { useStore } from 'zustand';
 
 import type { PlanningPokerStore } from '../stores/planning-poker-store';
@@ -12,28 +12,37 @@ import type { PlanningPokerStore } from '../stores/planning-poker-store';
 export const useNewRoundDialog = (store: PlanningPokerStore, onClose: () => void) => {
   const [label, setLabel] = useState('');
   const [error, setError] = useState(false);
+
   const pending = useStore(store, (state) => state.pendingRoundAction);
   const round = useStore(store, (state) => state.round);
+  const canModifyRounds = useStore(store, (state) => state.canModifyRounds);
   const busy = pending !== undefined;
   const roundActive = round?.content.active === true;
-  const submit: SubmitEventHandler<HTMLFormElement> = (event) => {
-    event.preventDefault();
-    if (busy || roundActive) return;
-    setError(false);
-    void store
-      .getState()
-      .startRound(label)
-      .then((started) => {
-        if (started) onClose();
-      })
-      .catch(() => setError(true));
-  };
+
+  const submit: SubmitEventHandler<HTMLFormElement> = useCallback(
+    (event) => {
+      event.preventDefault();
+      if (busy || roundActive || !canModifyRounds) return;
+      setError(false);
+      void store
+        .getState()
+        .startRound(label)
+        .then((started) => {
+          if (started) {
+            onClose();
+          }
+        })
+        .catch(() => setError(true));
+    },
+    [busy, roundActive, canModifyRounds, store, label, onClose],
+  );
+
   return {
     label,
     setLabel,
     error,
     busy,
-    disabled: busy || roundActive,
+    disabled: busy || roundActive || !canModifyRounds,
     roundAlreadyActive: roundActive && !busy,
     submit,
   };

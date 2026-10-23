@@ -1,9 +1,14 @@
 import {
   getRoomMemberDisplayName,
+  hasStateEventPower,
+  isValidCreateEventSchema,
+  isValidPowerLevelStateEvent,
   isValidRoomMemberStateEvent,
+  type PowerLevelsStateEvent,
   type RoomEvent,
   type RoomMemberStateEventContent,
   type StateEvent,
+  type StateEventCreateContent,
   type WidgetApi,
 } from '@matrix-widget-toolkit/api';
 import { createStore, type StoreApi } from 'zustand/vanilla';
@@ -32,6 +37,7 @@ interface PlanningPokerState {
   round: StateEvent<PlanningPokerRoundEvent> | undefined;
   cards: readonly PlanningPokerCard[];
   pendingRoundAction: RoundAction | undefined;
+  canModifyRounds: boolean;
   connect: () => () => void;
   startRound: (label?: string) => Promise<boolean>;
   revealRound: () => Promise<boolean>;
@@ -53,6 +59,8 @@ interface PlanningPokerContext {
   store: PlanningPokerStore;
   cardEvents: Map<string, Map<string, RoomEvent<PlanningPokerCardEvent>>>;
   roomMembers: Map<string, StateEvent<RoomMemberStateEventContent>>;
+  powerLevels?: PowerLevelsStateEvent;
+  roomCreate?: StateEvent<StateEventCreateContent>;
   pendingRoundAction?: PendingRoundAction;
   disconnect?: () => void;
 }
@@ -67,6 +75,7 @@ export const createPlanningPokerStore = (widgetApi: WidgetApi): PlanningPokerSto
     round: undefined,
     cards: [],
     pendingRoundAction: undefined,
+    canModifyRounds: false,
     connect: () => connect(context),
     startRound: (label = '') => startRound(context, label),
     revealRound: () => revealRound(context),
@@ -111,6 +120,22 @@ const connect = (context: PlanningPokerContext): (() => void) => {
       }),
     );
     subscriptions.push(
+      context.widgetApi.observeStateEvents('m.room.power_levels').subscribe((event) => {
+        if (isValidPowerLevelStateEvent(event)) {
+          context.powerLevels = event.content;
+          updateRoundPermission(context);
+        }
+      }),
+    );
+    subscriptions.push(
+      context.widgetApi.observeStateEvents('m.room.create').subscribe((event) => {
+        if (isValidCreateEventSchema(event)) {
+          context.roomCreate = event;
+          updateRoundPermission(context);
+        }
+      }),
+    );
+    subscriptions.push(
       context.widgetApi.observeStateEvents('m.room.member').subscribe((event) => {
         if (isValidRoomMemberStateEvent(event)) {
           context.roomMembers.set(event.state_key, event);
@@ -123,6 +148,24 @@ const connect = (context: PlanningPokerContext): (() => void) => {
     throw error;
   }
   return disconnect;
+};
+
+/**
+ * Rechecks the user's power for the poker round state event, including room creators.
+ * @param context The room store and its observed permission state.
+ */
+const updateRoundPermission = (context: PlanningPokerContext) => {
+  const userId = context.widgetApi.widgetParameters?.userId;
+  context.store.setState({
+    canModifyRounds:
+      userId !== undefined &&
+      hasStateEventPower(
+        context.powerLevels,
+        context.roomCreate,
+        userId,
+        PLANNING_POKER_ROUND_EVENT,
+      ),
+  });
 };
 
 /**
@@ -168,7 +211,7 @@ const sendRoundState = (
   kind: RoundAction,
   content: PlanningPokerRoundEvent,
 ): Promise<boolean> => {
-  if (context.pendingRoundAction) {
+  if (context.pendingRoundAction || !context.store.getState().canModifyRounds) {
     return Promise.resolve(false);
   }
   return new Promise((resolve, reject) => {

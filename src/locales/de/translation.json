@@ -8,6 +8,7 @@
     "cancel": "Abbrechen"
   },
   "info": {
+    "noRoundPermission": "Du hast in diesem Raum keine Berechtigung, Planning-Poker-Runden zu ändern.",
     "noActiveRound": "Es ist noch keine Planning Poker Runde aktiv.",
     "currentRound": "Aktuelle Runde:",
     "unlabeledRound": "Keine Beschreibung angegeben",

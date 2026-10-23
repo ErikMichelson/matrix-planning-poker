@@ -19,6 +19,8 @@ const widgetApiPromise = WidgetApiImpl.create({
     WidgetEventCapability.forRoomEvent(EventDirection.Send, PLANNING_POKER_CARD_EVENT),
     WidgetEventCapability.forRoomEvent(EventDirection.Receive, PLANNING_POKER_CARD_EVENT),
     WidgetEventCapability.forStateEvent(EventDirection.Receive, 'm.room.member'),
+    WidgetEventCapability.forStateEvent(EventDirection.Receive, 'm.room.power_levels'),
+    WidgetEventCapability.forStateEvent(EventDirection.Receive, 'm.room.create'),
   ],
 });
 

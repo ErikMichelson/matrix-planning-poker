@@ -22,7 +22,7 @@ installation directly command from there: <https://erikmichelson.github.io/matri
 This project uses the `pnpm` package manager and Node.js 24.
 
 - Build the code using `pnpm run build`
-- Run checks (formatting, linting, code quality) using `pnpm run checks`
+- Run checks (formatting, linting, code quality) using `pnpm run check`
 - Run a hot-reloading dev server using `pnpm run dev`
 - Fix formatting issues using `pnpm run fix`
 

@@ -19,6 +19,7 @@ it.each([
       createElement(RoundActionButtons, {
         roundActive: active,
         pending,
+        canModifyRounds: true,
         onReveal: vi.fn(),
         onStart: vi.fn(),
       }),
@@ -33,6 +34,35 @@ it.each([
     expect(html).toContain('flex:1');
   },
 );
+
+it.each([false, true])('disables both actions without permission (active: %s)', (roundActive) => {
+  const html = renderToStaticMarkup(
+    createElement(RoundActionButtons, {
+      roundActive,
+      pending: false,
+      canModifyRounds: false,
+      onReveal: vi.fn(),
+      onStart: vi.fn(),
+    }),
+  );
+  const buttons = html.match(/<button\b[^>]*>/g) ?? [];
+  expect(buttons).toHaveLength(2);
+  expect(buttons.every((button) => button.includes('disabled=""'))).toBe(true);
+  expect(html).toContain('info.noRoundPermission');
+});
+
+it('hides the permission explanation when round actions are allowed', () => {
+  const html = renderToStaticMarkup(
+    createElement(RoundActionButtons, {
+      roundActive: false,
+      pending: false,
+      canModifyRounds: true,
+      onReveal: vi.fn(),
+      onStart: vi.fn(),
+    }),
+  );
+  expect(html).not.toContain('info.noRoundPermission');
+});
 
 it('linkifies round labels with safe external link attributes and preserves line breaks', () => {
   const html = renderToStaticMarkup(

@@ -1,5 +1,5 @@
 import type { RoomEvent, StateEvent, WidgetApi } from '@matrix-widget-toolkit/api';
-import { Subject } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { afterEach, beforeEach, expect, it, vi } from 'vite-plus/test';
 
 import {
@@ -50,6 +50,7 @@ beforeEach(() => {
   stateEvents = new Subject();
   roomEvents = new Subject();
   const widgetApi = {
+    widgetParameters: { userId: '@alice:example.org' },
     observeStateEvents: vi.fn().mockReturnValue(stateEvents),
     observeRoomEvents: vi.fn().mockReturnValue(roomEvents),
   } as unknown as WidgetApi;
@@ -175,14 +176,14 @@ it('keeps independent room stores isolated', () => {
 it('does not duplicate subscriptions and makes old cleanup safe after reconnecting', () => {
   const oldDisconnect = disconnect;
   expect(store.getState().connect()).toBe(oldDisconnect);
-  expect(stateEvents.observers).toHaveLength(2);
+  expect(stateEvents.observers).toHaveLength(4);
   expect(roomEvents.observers).toHaveLength(1);
 
   oldDisconnect();
   disconnect = store.getState().connect();
   oldDisconnect();
 
-  expect(stateEvents.observers).toHaveLength(2);
+  expect(stateEvents.observers).toHaveLength(4);
   expect(roomEvents.observers).toHaveLength(1);
   stateEvents.next(roundEvent('$round', true, 1));
   expect(store.getState().round?.event_id).toBe('$round');
@@ -205,7 +206,7 @@ it('cleans up a partial connection if the SDK throws and allows reconnecting', (
   expect(() => otherStore.getState().connect()).toThrow('Cannot subscribe');
   expect(stateEvents.observers).toHaveLength(initialObservers);
   const stop = otherStore.getState().connect();
-  expect(stateEvents.observers).toHaveLength(initialObservers + 2);
+  expect(stateEvents.observers).toHaveLength(initialObservers + 4);
   stop();
   expect(stateEvents.observers).toHaveLength(initialObservers);
 });
@@ -225,4 +226,72 @@ it('updates member names without mutating a previously published card snapshot',
   expect(previousCards[0]?.displayName).toBe('@alice:example.org');
   expect(store.getState().cards[0]?.displayName).toBe('Alice');
   expect(store.getState().cards).not.toBe(previousCards);
+});
+
+const powerEvent = (content: unknown): StateEvent<unknown> => ({
+  ...roundEvent('$power', false, 1),
+  type: 'm.room.power_levels',
+  content,
+});
+
+it('starts with disabled controls until permission state arrives and reacts to updates', () => {
+  expect(store.getState().canModifyRounds).toBe(false);
+  stateEvents.next(powerEvent({ users: { '@alice:example.org': 50 } }));
+  expect(store.getState().canModifyRounds).toBe(true);
+  stateEvents.next(powerEvent({ users: { '@alice:example.org': 49 } }));
+  expect(store.getState().canModifyRounds).toBe(false);
+  stateEvents.next(powerEvent({ users_default: 75, state_default: 75 }));
+  expect(store.getState().canModifyRounds).toBe(true);
+});
+
+it.each([
+  [{}, false],
+  [{ users_default: 50 }, true],
+  [{ users_default: 50, users: { '@alice:example.org': 0 } }, false],
+  [{ state_default: 0 }, true],
+  [{ events_default: 0 }, false],
+  [{ users_default: 50, events: { [PLANNING_POKER_ROUND_EVENT]: 51 } }, false],
+  [{ state_default: 100, events: { [PLANNING_POKER_ROUND_EVENT]: 0 } }, true],
+])(
+  'compares initial power levels using Matrix defaults and event overrides: %j',
+  (content, allowed) => {
+    const api = {
+      widgetParameters: { userId: '@alice:example.org' },
+      observeStateEvents: vi.fn((type: string) =>
+        type === 'm.room.power_levels' ? of(powerEvent(content)) : new Subject(),
+      ),
+      observeRoomEvents: vi.fn().mockReturnValue(new Subject()),
+    } as unknown as WidgetApi;
+    const initialStore = createPlanningPokerStore(api);
+    const stop = initialStore.getState().connect();
+    expect(initialStore.getState().canModifyRounds).toBe(allowed);
+    stop();
+  },
+);
+
+it.each(['@alice:example.org', '@bob:example.org'])(
+  'recognizes room version 12 creators, including additional creators: %s',
+  (creator) => {
+    stateEvents.next(powerEvent({ state_default: 1000 }));
+    expect(store.getState().canModifyRounds).toBe(false);
+    stateEvents.next({
+      ...roundEvent('$create', false, 1),
+      type: 'm.room.create',
+      sender: creator,
+      content: { room_version: '12', additional_creators: ['@alice:example.org'] },
+    });
+    expect(store.getState().canModifyRounds).toBe(true);
+  },
+);
+
+it('does not infer permission without the current user ID', () => {
+  const api = {
+    widgetParameters: {},
+    observeStateEvents: vi.fn().mockReturnValue(of(powerEvent({ state_default: 0 }))),
+    observeRoomEvents: vi.fn().mockReturnValue(new Subject()),
+  } as unknown as WidgetApi;
+  const anonymousStore = createPlanningPokerStore(api);
+  const stop = anonymousStore.getState().connect();
+  expect(anonymousStore.getState().canModifyRounds).toBe(false);
+  stop();
 });

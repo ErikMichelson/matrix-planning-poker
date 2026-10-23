@@ -8,6 +8,7 @@
     "cancel": "Cancel"
   },
   "info": {
+    "noRoundPermission": "You don't have permission in this room to modify planning poker rounds.",
     "noActiveRound": "There's no active planning poker round yet.",
     "currentRound": "Current round:",
     "unlabeledRound": "No label provided",
