@@ -1,22 +1,22 @@
 import {
   getRoomMemberDisplayName,
   isValidRoomMemberStateEvent,
-  RoomEvent,
-  RoomMemberStateEventContent,
-  StateEvent,
-  WidgetApi,
+  type RoomEvent,
+  type RoomMemberStateEventContent,
+  type StateEvent,
+  type WidgetApi,
 } from '@matrix-widget-toolkit/api';
-import { BehaviorSubject, filter, Subject, takeUntil } from 'rxjs';
+import { createStore, type StoreApi } from 'zustand/vanilla';
 
 import {
   isValidPlanningPokerCardEvent,
   PLANNING_POKER_CARD_EVENT,
-  PlanningPokerCardEvent,
+  type PlanningPokerCardEvent,
 } from '../events/planning-poker-card';
 import {
   isValidPlanningPokerRoundEvent,
   PLANNING_POKER_ROUND_EVENT,
-  PlanningPokerRoundEvent,
+  type PlanningPokerRoundEvent,
 } from '../events/planning-poker-round-event';
 
 export type PlanningPokerCard = {
@@ -26,127 +26,176 @@ export type PlanningPokerCard = {
   value: string;
 };
 
-export class PlanningPokerStore {
-  private destroySubject = new Subject<void>();
-  public readonly planningPokerRoundEventSubject = new BehaviorSubject<
-    StateEvent<PlanningPokerRoundEvent> | undefined
-  >(undefined);
-  public readonly planningPokerCardsSubject = new BehaviorSubject<PlanningPokerCard[]>([]);
-  public readonly activeSubject = new BehaviorSubject(false);
-  private planningPokerCards = new Map<string, Map<string, RoomEvent<PlanningPokerCardEvent>>>();
-
-  private roomMembers = new Map<string, StateEvent<RoomMemberStateEventContent>>();
-
-  constructor(private widgetApi: WidgetApi) {}
-
-  public start() {
-    this.observeEvents();
-  }
-
-  public destroy() {
-    this.destroySubject.next();
-  }
-
-  private handlePlanningPokerRoundEvent = (event: StateEvent<PlanningPokerRoundEvent>) => {
-    const currentEvent = this.planningPokerRoundEventSubject.getValue();
-
-    if (currentEvent === undefined) {
-      // First event
-      this.planningPokerRoundEventSubject.next(event);
-      this.emitCards();
-      return;
-    }
-
-    if (currentEvent.origin_server_ts < event.origin_server_ts) {
-      // More recent event
-      this.planningPokerRoundEventSubject.next(event);
-      this.emitCards();
-      return;
-    }
-
-    // Ignore older events
-    console.warn('Unhandled planning poker round event', event);
-  };
-
-  private handlePlanningPokerCardEvent = (event: RoomEvent<PlanningPokerCardEvent>) => {
-    const planningPokerRoundId = event.content['m.relates_to'].event_id;
-    const planningPokerCardEvents: Map<
-      string,
-      RoomEvent<PlanningPokerCardEvent>
-    > = this.planningPokerCards.get(planningPokerRoundId) ?? new Map();
-
-    const existingEvent = planningPokerCardEvents.get(event.sender);
-
-    if (existingEvent === undefined || existingEvent.origin_server_ts < event.origin_server_ts) {
-      planningPokerCardEvents.set(event.sender, event);
-      this.planningPokerCards.set(planningPokerRoundId, planningPokerCardEvents);
-      this.emitCards();
-      return;
-    }
-  };
-
-  private observeEvents() {
-    this.planningPokerRoundEventSubject.pipe(takeUntil(this.destroySubject)).subscribe((event) => {
-      this.activeSubject.next(event?.content.active === true);
-    });
-
-    this.widgetApi
-      .observeStateEvents(PLANNING_POKER_ROUND_EVENT)
-      .pipe(takeUntil(this.destroySubject), filter(isValidPlanningPokerRoundEvent))
-      .subscribe(this.handlePlanningPokerRoundEvent);
-
-    this.widgetApi
-      .observeRoomEvents(PLANNING_POKER_CARD_EVENT)
-      .pipe(takeUntil(this.destroySubject), filter(isValidPlanningPokerCardEvent))
-      .subscribe(this.handlePlanningPokerCardEvent);
-    this.widgetApi
-      .observeStateEvents('m.room.member')
-      .pipe(takeUntil(this.destroySubject), filter(isValidRoomMemberStateEvent))
-      .subscribe((event) => {
-        this.roomMembers.set(event.state_key, event);
-        this.emitCards();
-      });
-  }
-
-  private emitCards() {
-    const planningPokerRoundEvent = this.planningPokerRoundEventSubject.getValue();
-
-    if (planningPokerRoundEvent === undefined) {
-      // No active round
-      this.planningPokerCardsSubject.next([]);
-      return;
-    }
-
-    const roundId = getRoundId(planningPokerRoundEvent);
-    if (roundId === undefined) {
-      console.warn('Unhandled planning poker round state');
-      return;
-    }
-
-    const eventsMap =
-      this.planningPokerCards.get(roundId) ?? new Map<string, RoomEvent<PlanningPokerCardEvent>>();
-    const events = Array.from(eventsMap.values());
-    this.planningPokerCardsSubject.next(events.map((event) => mapToCard(event, this.roomMembers)));
-  }
+interface PlanningPokerState {
+  round: StateEvent<PlanningPokerRoundEvent> | undefined;
+  cards: readonly PlanningPokerCard[];
+  connect: () => () => void;
 }
 
+export type PlanningPokerStore = StoreApi<PlanningPokerState>;
+
+interface PlanningPokerContext {
+  widgetApi: WidgetApi;
+  store: PlanningPokerStore;
+  cardEvents: Map<string, Map<string, RoomEvent<PlanningPokerCardEvent>>>;
+  roomMembers: Map<string, StateEvent<RoomMemberStateEventContent>>;
+  disconnect?: () => void;
+}
+
+/**
+ * Creates an isolated room store without subscribing during React rendering.
+ * @param widgetApi The API for this widget's Matrix room.
+ * @returns A vanilla Zustand store with a restartable connection.
+ */
+export const createPlanningPokerStore = (widgetApi: WidgetApi): PlanningPokerStore => {
+  const store = createStore<PlanningPokerState>()(() => ({
+    round: undefined,
+    cards: [],
+    connect: () => connect(context),
+  }));
+  const context: PlanningPokerContext = {
+    widgetApi,
+    store,
+    cardEvents: new Map(),
+    roomMembers: new Map(),
+  };
+  return store;
+};
+
+/**
+ * Subscribes to round, card, and member events.
+ * @param context The room store and its event caches.
+ * @returns The existing or newly created cleanup function.
+ * @throws Error If the SDK cannot subscribe.
+ */
+const connect = (context: PlanningPokerContext): (() => void) => {
+  if (context.disconnect) {
+    return context.disconnect;
+  }
+
+  const subscriptions: { unsubscribe: () => void }[] = [];
+  /** Stops these subscriptions without detaching a newer connection. */
+  const disconnect = () => {
+    subscriptions.forEach((subscription) => subscription.unsubscribe());
+    if (context.disconnect === disconnect) context.disconnect = undefined;
+  };
+  context.disconnect = disconnect;
+
+  try {
+    subscriptions.push(
+      context.widgetApi.observeStateEvents(PLANNING_POKER_ROUND_EVENT).subscribe((event) => {
+        if (isValidPlanningPokerRoundEvent(event)) receiveRound(context, event);
+      }),
+    );
+    subscriptions.push(
+      context.widgetApi.observeRoomEvents(PLANNING_POKER_CARD_EVENT).subscribe((event) => {
+        if (isValidPlanningPokerCardEvent(event)) receiveCard(context, event);
+      }),
+    );
+    subscriptions.push(
+      context.widgetApi.observeStateEvents('m.room.member').subscribe((event) => {
+        if (isValidRoomMemberStateEvent(event)) {
+          context.roomMembers.set(event.state_key, event);
+          context.store.setState({ cards: getCards(context, context.store.getState().round) });
+        }
+      }),
+    );
+  } catch (error) {
+    disconnect();
+    throw error;
+  }
+  return disconnect;
+};
+
+/**
+ * Records action confirmations and applies newer round state.
+ * @param context The room store and its event caches.
+ * @param event The validated round event.
+ */
+const receiveRound = (
+  context: PlanningPokerContext,
+  event: StateEvent<PlanningPokerRoundEvent>,
+) => {
+  const current = context.store.getState().round;
+  if (current !== undefined && current.origin_server_ts >= event.origin_server_ts) {
+    console.warn('Unhandled planning poker round event', event);
+    return;
+  }
+  context.store.setState({ round: event, cards: getCards(context, event) });
+};
+
+/**
+ * Keeps each sender's latest vote and refreshes the displayed cards.
+ * @param context The room store and its event caches.
+ * @param event The validated card event.
+ */
+const receiveCard = (context: PlanningPokerContext, event: RoomEvent<PlanningPokerCardEvent>) => {
+  const roundId = event.content['m.relates_to'].event_id;
+  const events =
+    context.cardEvents.get(roundId) ?? new Map<string, RoomEvent<PlanningPokerCardEvent>>();
+  const existing = events.get(event.sender);
+  if (existing !== undefined && existing.origin_server_ts >= event.origin_server_ts) {
+    return;
+  }
+  events.set(event.sender, event);
+  context.cardEvents.set(roundId, events);
+  context.store.setState({ cards: getCards(context, context.store.getState().round) });
+};
+
+/**
+ * Builds cards for the active round or the revealed last one.
+ * @param context The room store and its event caches.
+ * @param round The current round state, if available.
+ * @returns The cards to display.
+ */
+const getCards = (
+  context: PlanningPokerContext,
+  round: StateEvent<PlanningPokerRoundEvent> | undefined,
+): readonly PlanningPokerCard[] => {
+  if (round === undefined) {
+    return [];
+  }
+  const roundId = getRoundId(round);
+  if (roundId === undefined) {
+    console.warn('Unhandled planning poker round state');
+    return context.store.getState().cards;
+  }
+  const events =
+    context.cardEvents.get(roundId) ?? new Map<string, RoomEvent<PlanningPokerCardEvent>>();
+  return Array.from(events.values(), (event) => mapToCard(event, context.roomMembers));
+};
+
+/**
+ * Selects the event ID whose cards belong to the displayed round.
+ * @param event The current round state.
+ * @returns The active or replaced event ID, if available.
+ */
 const getRoundId = (event: StateEvent<PlanningPokerRoundEvent>): string | undefined => {
   if (event.content.active) {
     return event.event_id;
   }
-
   return getReplacedRoundId('unsigned' in event ? event.unsigned : undefined);
 };
 
+/**
+ * Reads the previous round ID from Matrix's unsigned metadata.
+ * @param unsigned The event's unvalidated unsigned metadata.
+ * @returns The replaced state event ID, if present.
+ */
 const getReplacedRoundId = (unsigned: unknown): string | undefined => {
   if (typeof unsigned !== 'object' || unsigned === null) {
     return undefined;
   }
-
   const roundId: unknown = Reflect.get(unsigned, 'replaces_state');
   return typeof roundId === 'string' ? roundId : undefined;
 };
 
+/**
+ * Maps a vote to a card with the sender's room display name.
+ * @param event The validated card event.
+ * @param roomMembers The known room member state events.
+ * @returns The card to display.
+ */
 const mapToCard = (
   event: RoomEvent<PlanningPokerCardEvent>,
   roomMembers: Map<string, StateEvent<RoomMemberStateEventContent>>,

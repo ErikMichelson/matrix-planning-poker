@@ -1,9 +1,11 @@
 import { WidgetApiImpl } from '@matrix-widget-toolkit/api';
+import { MuiThemeProvider, MuiWidgetApiProvider } from '@matrix-widget-toolkit/mui';
+import { Box } from '@mui/material';
 import { EventDirection, WidgetEventCapability } from 'matrix-widget-api';
-import React from 'react';
+import { StrictMode, Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
 
-import { App } from './app.tsx';
+import { PlanningPoker } from './components/planning-poker';
 import { PLANNING_POKER_CARD_EVENT } from './events/planning-poker-card.ts';
 import { PLANNING_POKER_ROUND_EVENT } from './events/planning-poker-round-event.ts';
 import './i18n';
@@ -21,7 +23,21 @@ const widgetApiPromise = WidgetApiImpl.create({
 });
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App widgetApiPromise={widgetApiPromise} />
-  </React.StrictMode>,
+  <StrictMode>
+    <MuiThemeProvider>
+      <Suspense fallback={<></>}>
+        <MuiWidgetApiProvider
+          widgetApiPromise={widgetApiPromise}
+          widgetRegistration={{
+            name: 'Planning Poker',
+            type: 'info.weeman.planning_poker',
+          }}
+        >
+          <Box sx={{ padding: '8px' }}>
+            <PlanningPoker />
+          </Box>
+        </MuiWidgetApiProvider>
+      </Suspense>
+    </MuiThemeProvider>
+  </StrictMode>,
 );

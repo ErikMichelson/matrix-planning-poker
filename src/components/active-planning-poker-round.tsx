@@ -2,6 +2,7 @@ import { useWidgetApi } from '@matrix-widget-toolkit/react';
 import { Box, Button } from '@mui/material';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { useStore } from 'zustand';
 
 import {
   PLANNING_POKER_CARD_EVENT,
@@ -9,8 +10,7 @@ import {
   type PlanningPokerCardEvent,
 } from '../events/planning-poker-card';
 import { PLANNING_POKER_ROUND_EVENT } from '../events/planning-poker-round-event';
-import { PlanningPokerStore } from '../stores/planning-poker-store';
-import { useSubject } from '../stores/use-subject';
+import type { PlanningPokerStore } from '../stores/planning-poker-store';
 import { PlanningPokerCards } from './planning-poker-cards';
 
 type ActivePlanningPokerRoundProps = {
@@ -24,7 +24,7 @@ export const ActivePlanningPokerRound: React.FC<ActivePlanningPokerRoundProps> =
 }) => {
   const widgetApi = useWidgetApi();
   const { t } = useTranslation();
-  const cards = useSubject(planningPokerStore.planningPokerCardsSubject);
+  const cards = useStore(planningPokerStore, (state) => state.cards);
   const myCard = cards.find((c) => c.sender === widgetApi.widgetParameters.userId);
   const sendCardElements = PLANNING_POKER_CARD_VALUES.map((value) => {
     return (

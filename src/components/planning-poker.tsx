@@ -1,8 +1,8 @@
 import { useWidgetApi } from '@matrix-widget-toolkit/react';
 import { useEffect, useMemo } from 'react';
+import { useStore } from 'zustand';
 
-import { PlanningPokerStore } from '../stores/planning-poker-store';
-import { useSubject } from '../stores/use-subject';
+import { createPlanningPokerStore, type PlanningPokerStore } from '../stores/planning-poker-store';
 import { ActivePlanningPokerRound } from './active-planning-poker-round';
 import { LastPlanningPokerRound } from './last-planning-poker-round';
 import { NoPlanningPokerRound } from './no-planning-poker-round';
@@ -11,18 +11,13 @@ export const PlanningPoker = () => {
   const widgetApi = useWidgetApi();
 
   const planningPokerStore: PlanningPokerStore = useMemo(
-    () => new PlanningPokerStore(widgetApi),
+    () => createPlanningPokerStore(widgetApi),
     [widgetApi],
   );
 
-  useEffect(() => {
-    planningPokerStore.start();
-    return () => {
-      planningPokerStore.destroy();
-    };
-  }, [planningPokerStore]);
+  useEffect(() => planningPokerStore.getState().connect(), [planningPokerStore]);
 
-  const round = useSubject(planningPokerStore.planningPokerRoundEventSubject);
+  const round = useStore(planningPokerStore, (state) => state.round);
 
   if (round?.content.active === true) {
     return (
