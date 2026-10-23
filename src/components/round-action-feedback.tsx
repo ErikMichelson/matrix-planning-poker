@@ -20,7 +20,13 @@ export const RoundActionFeedback: React.FC<RoundActionFeedbackProps> = ({
     <Box sx={{ mt: 1 }}>
       {pending && (
         <Typography role='status' align='center'>
-          {t(pending === 'start' ? 'status.startingRound' : 'status.revealingResults')}
+          {t(
+            {
+              start: 'status.startingRound',
+              reveal: 'status.revealingResults',
+              edit: 'status.updatingRoundLabel',
+            }[pending],
+          )}
         </Typography>
       )}
       {error && (

@@ -1,7 +1,11 @@
+import type { WidgetApi } from '@matrix-widget-toolkit/api';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, it, vi } from 'vite-plus/test';
+import { createStore } from 'zustand/vanilla';
 
+import { createPlanningPokerStore } from '../stores/planning-poker-store';
+import { EditablePlanningPokerRoundLabel } from './editable-planning-poker-round-label';
 import { PlanningPokerRoundLabel } from './planning-poker-round-label';
 import { RoundActionButtons } from './round-action-buttons';
 
@@ -95,4 +99,28 @@ it('treats round text as plain text and does not create unsafe-protocol links', 
 it('shows a clear placeholder for rounds without a label', () => {
   const html = renderToStaticMarkup(createElement(PlanningPokerRoundLabel));
   expect(html).toContain('info.unlabeledRound');
+});
+
+it.each([false, true])('shows the pencil only with permission to edit: %s', (canModifyRounds) => {
+  const store = createStore(() => ({
+    ...createPlanningPokerStore({} as WidgetApi).getState(),
+    canModifyRounds,
+  }));
+  const html = renderToStaticMarkup(
+    createElement(EditablePlanningPokerRoundLabel, { planningPokerStore: store }),
+  );
+  expect(html.includes('aria-label="action.editRoundLabel"')).toBe(canModifyRounds);
+});
+
+it('disables the label editor while a round action is pending', () => {
+  const store = createStore(() => ({
+    ...createPlanningPokerStore({} as WidgetApi).getState(),
+    canModifyRounds: true,
+    pendingRoundAction: 'edit' as const,
+  }));
+  const html = renderToStaticMarkup(
+    createElement(EditablePlanningPokerRoundLabel, { planningPokerStore: store }),
+  );
+  expect(html).toContain('aria-label="action.editRoundLabel"');
+  expect(html).toContain('disabled=""');
 });

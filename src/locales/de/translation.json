@@ -3,11 +3,14 @@
     "planningPoker": "Planning Poker"
   },
   "action": {
+    "editRoundLabel": "Rundenbeschreibung bearbeiten",
+    "saveRoundLabel": "Beschreibung speichern",
     "startNewRound": "Neue Runde starten",
     "reveal": "Ergebnisse aufdecken",
     "cancel": "Abbrechen"
   },
   "info": {
+    "roundChanged": "Die Runde hat sich geändert. Schließe diesen Dialog und öffne ihn erneut, um die aktuelle Beschreibung zu bearbeiten.",
     "noRoundPermission": "Du hast in diesem Raum keine Berechtigung, Planning-Poker-Runden zu ändern.",
     "noActiveRound": "Es ist noch keine Planning Poker Runde aktiv.",
     "currentRound": "Aktuelle Runde:",
@@ -15,11 +18,14 @@
     "roundAlreadyActive": "Es ist bereits eine andere Runde aktiv."
   },
   "dialog": {
+    "editRoundTitle": "Rundenbeschreibung bearbeiten",
+    "editRoundDescription": "Ändere das Thema oder den Link für diese Runde. Stimmen und der aktuelle Rundenstatus bleiben erhalten.",
     "newRoundTitle": "Eine neue Runde starten",
     "newRoundDescription": "Optional kann ein Thema oder Link angegeben werden, damit alle wissen, was geschätzt werden soll. Eine neue Runde ersetzt die angezeigten Ergebnisse.",
     "roundLabel": "Beschreibung der Runde (optional)"
   },
   "status": {
+    "updatingRoundLabel": "Rundenbeschreibung wird aktualisiert…",
     "startingRound": "Runde wird gestartet…",
     "revealingResults": "Ergebnisse werden aufgedeckt…"
   },

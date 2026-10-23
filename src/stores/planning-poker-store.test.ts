@@ -107,6 +107,34 @@ it('shows the replaced round cards after the round is closed', () => {
   ]);
 });
 
+it('keeps votes associated with the original round through edits, reveals, and history replay', () => {
+  stateEvents.next(roundEvent('$round', true, 1));
+  roomEvents.next(cardEvent('$round', '8'));
+  for (const [eventId, active, timestamp] of [
+    ['$edited', true, 3],
+    ['$edited-again', true, 4],
+    ['$closed', false, 5],
+    ['$closed-edited', false, 6],
+  ] as const) {
+    stateEvents.next({
+      ...roundEvent(eventId, active, timestamp),
+      content: { active, label: 'Updated topic', round_id: '$round' },
+    });
+    expect(store.getState().cards[0]?.value).toBe('8');
+  }
+  stateEvents.next(roundEvent('$new-round', true, 7));
+  expect(store.getState().cards).toEqual([]);
+});
+
+it('resolves cached votes when an edited round is the first state received', () => {
+  roomEvents.next(cardEvent('$original', '13'));
+  stateEvents.next({
+    ...roundEvent('$edited', true, 3),
+    content: { active: true, label: 'Updated topic', round_id: '$original' },
+  });
+  expect(store.getState().cards[0]?.value).toBe('13');
+});
+
 it.each([undefined, null, 42, 'invalid', {}, { replaces_state: 42 }])(
   'ignores malformed replacement metadata: %j',
   (unsigned) => {

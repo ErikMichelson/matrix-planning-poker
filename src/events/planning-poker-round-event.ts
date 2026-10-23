@@ -7,6 +7,7 @@ const planningPokerRoundEventSchema = z.compile(
   z.looseObject({
     active: z.boolean(),
     label: z.optional(z.string()),
+    round_id: z.optional(z.string().check(z.minLength(1))),
   }),
 );
 

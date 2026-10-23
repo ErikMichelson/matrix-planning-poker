@@ -3,11 +3,14 @@
     "planningPoker": "Planning Poker"
   },
   "action": {
+    "editRoundLabel": "Edit round label",
+    "saveRoundLabel": "Save label",
     "startNewRound": "Start new round",
     "reveal": "Reveal results",
     "cancel": "Cancel"
   },
   "info": {
+    "roundChanged": "The round has changed. Close this dialog and reopen it to edit the current label.",
     "noRoundPermission": "You don't have permission in this room to modify planning poker rounds.",
     "noActiveRound": "There's no active planning poker round yet.",
     "currentRound": "Current round:",
@@ -15,11 +18,14 @@
     "roundAlreadyActive": "Another round is already active."
   },
   "dialog": {
+    "editRoundTitle": "Edit round label",
+    "editRoundDescription": "Update the topic or link for this round. Votes and the current round status are preserved.",
     "newRoundTitle": "Start a new round",
     "newRoundDescription": "Add an optional topic or link so everyone knows what to estimate. Starting a new round replaces the displayed results.",
     "roundLabel": "Round label (optional)"
   },
   "status": {
+    "updatingRoundLabel": "Updating round label…",
     "startingRound": "Starting round…",
     "revealingResults": "Revealing results…"
   },

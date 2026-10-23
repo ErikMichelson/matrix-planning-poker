@@ -10,7 +10,7 @@ with the following enhancements:
 - up-to-date toolchains and dependencies
 - use of proper display names for participants
 - strict validation of events (so people can't inject invalid values using manually crafted events)
-- better UI
+- custom labels for rounds to indicate to everyone what is voted about
 
 ## Installation
 
@@ -32,14 +32,23 @@ format.
 ## Technical details and event formats
 
 The widget uses a room state event of type `weeman.planning_poker_round` to indicate the current
-phase of the round.
+phase of the round. Since this is a state event, by default only room moderators with a power
+level of 50 or higher can manage rounds.
+
+When editing a round, the state event ID changes and therefore all votes would be lost.
+In order to keep the votes, the edited state includes a `round_id` field, referencing the original
+round event. This is later user to aggregate votes together.
 
 ```jsonc
 {
   "type": "weeman.planning_poker_round",
   "content": {
     // bool whether the current round is open to poker or closed to show cards
-    "active": true
+    "active": true,
+    // custom label for the current round
+    "label": "https://example.com/issue-123",
+    // Round ID to keep votes on edited rounds
+    "round_id": "$123456789"
   }
 }
 ```

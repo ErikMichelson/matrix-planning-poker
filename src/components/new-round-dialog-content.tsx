@@ -8,6 +8,8 @@ interface NewRoundDialogContentProps {
   disabled: boolean;
   error: boolean;
   roundAlreadyActive: boolean;
+  roundChanged: boolean;
+  editing: boolean;
 }
 
 export const NewRoundDialogContent: React.FC<NewRoundDialogContentProps> = ({
@@ -16,11 +18,15 @@ export const NewRoundDialogContent: React.FC<NewRoundDialogContentProps> = ({
   disabled,
   error,
   roundAlreadyActive,
+  roundChanged,
+  editing,
 }) => {
   const { t } = useTranslation();
   return (
     <DialogContent>
-      <DialogContentText>{t('dialog.newRoundDescription')}</DialogContentText>
+      <DialogContentText>
+        {t(editing ? 'dialog.editRoundDescription' : 'dialog.newRoundDescription')}
+      </DialogContentText>
       <TextField
         autoFocus
         fullWidth
@@ -34,6 +40,7 @@ export const NewRoundDialogContent: React.FC<NewRoundDialogContentProps> = ({
       />
       {error && <Alert severity='error'>{t('error.updateRound')}</Alert>}
       {roundAlreadyActive && <Alert severity='info'>{t('info.roundAlreadyActive')}</Alert>}
+      {roundChanged && <Alert severity='info'>{t('info.roundChanged')}</Alert>}
     </DialogContent>
   );
 };

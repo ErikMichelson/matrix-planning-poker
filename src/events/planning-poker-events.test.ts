@@ -23,6 +23,25 @@ const makeEvent = (type: string, content: unknown): StateEvent<unknown> => ({
 
 const reference = { rel_type: 'm.reference', event_id: '$round' };
 
+it.each([undefined, '$original-round'])(
+  'accepts an optional stable round reference %j',
+  (round_id) => {
+    expect(
+      isValidPlanningPokerRoundEvent(
+        makeEvent(PLANNING_POKER_ROUND_EVENT, { active: true, round_id }),
+      ),
+    ).toBe(true);
+  },
+);
+
+it.each(['', null, 42, {}])('rejects an invalid stable round reference %j', (round_id) => {
+  expect(
+    isValidPlanningPokerRoundEvent(
+      makeEvent(PLANNING_POKER_ROUND_EVENT, { active: true, round_id }),
+    ),
+  ).toBe(false);
+});
+
 it.each([undefined, '', 'Story 123', 'Estimate https://example.org/story/123'])(
   'accepts optional round label %j',
   (label) => {

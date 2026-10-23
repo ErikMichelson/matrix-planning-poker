@@ -7,10 +7,16 @@ import type { PlanningPokerStore } from '../stores/planning-poker-store';
  * Keeps the round draft available until its confirmed submission succeeds.
  * @param store The room's planning poker store.
  * @param onClose Closes the dialog after confirmation.
+ * @param mode Whether to start a round or edit the displayed round's label.
  * @returns The form state and guarded submit handler.
  */
-export const useNewRoundDialog = (store: PlanningPokerStore, onClose: () => void) => {
-  const [label, setLabel] = useState('');
+export const useNewRoundDialog = (
+  store: PlanningPokerStore,
+  onClose: () => void,
+  mode: 'start' | 'edit',
+) => {
+  const [editedRound] = useState(() => (mode === 'edit' ? store.getState().round : undefined));
+  const [label, setLabel] = useState(editedRound?.content.label ?? '');
   const [error, setError] = useState(false);
 
   const pending = useStore(store, (state) => state.pendingRoundAction);
@@ -18,15 +24,20 @@ export const useNewRoundDialog = (store: PlanningPokerStore, onClose: () => void
   const canModifyRounds = useStore(store, (state) => state.canModifyRounds);
   const busy = pending !== undefined;
   const roundActive = round?.content.active === true;
+  const roundChanged =
+    mode === 'edit' && (!editedRound || round?.event_id !== editedRound.event_id);
+  const disabled = busy || !canModifyRounds || (mode === 'edit' ? roundChanged : roundActive);
 
   const submit: SubmitEventHandler<HTMLFormElement> = useCallback(
     (event) => {
       event.preventDefault();
-      if (busy || roundActive || !canModifyRounds) return;
+      if (disabled) return;
       setError(false);
-      void store
-        .getState()
-        .startRound(label)
+      const action =
+        mode === 'edit' && editedRound
+          ? store.getState().updateRoundLabel(label, editedRound.event_id)
+          : store.getState().startRound(label);
+      void action
         .then((started) => {
           if (started) {
             onClose();
@@ -34,7 +45,7 @@ export const useNewRoundDialog = (store: PlanningPokerStore, onClose: () => void
         })
         .catch(() => setError(true));
     },
-    [busy, roundActive, canModifyRounds, store, label, onClose],
+    [disabled, mode, editedRound, store, label, onClose],
   );
 
   return {
@@ -42,8 +53,9 @@ export const useNewRoundDialog = (store: PlanningPokerStore, onClose: () => void
     setLabel,
     error,
     busy,
-    disabled: busy || roundActive || !canModifyRounds,
-    roundAlreadyActive: roundActive && !busy,
+    disabled,
+    roundAlreadyActive: mode === 'start' && roundActive && !busy,
+    roundChanged: roundChanged && !busy,
     submit,
   };
 };

@@ -31,7 +31,7 @@ export type PlanningPokerCard = {
   value: string;
 };
 
-export type RoundAction = 'start' | 'reveal';
+export type RoundAction = 'start' | 'reveal' | 'edit';
 
 interface PlanningPokerState {
   round: StateEvent<PlanningPokerRoundEvent> | undefined;
@@ -41,6 +41,7 @@ interface PlanningPokerState {
   connect: () => () => void;
   startRound: (label?: string) => Promise<boolean>;
   revealRound: () => Promise<boolean>;
+  updateRoundLabel: (label: string, expectedEventId: string) => Promise<boolean>;
 }
 
 export type PlanningPokerStore = StoreApi<PlanningPokerState>;
@@ -79,6 +80,7 @@ export const createPlanningPokerStore = (widgetApi: WidgetApi): PlanningPokerSto
     connect: () => connect(context),
     startRound: (label = '') => startRound(context, label),
     revealRound: () => revealRound(context),
+    updateRoundLabel: (label, expectedEventId) => updateRoundLabel(context, label, expectedEventId),
   }));
   const context: PlanningPokerContext = {
     widgetApi,
@@ -196,6 +198,30 @@ const revealRound = (context: PlanningPokerContext): Promise<boolean> => {
     return Promise.resolve(false);
   }
   return sendRoundState(context, 'reveal', { ...round.content, active: false });
+};
+
+/**
+ * Updates the displayed round's label without moving its votes to a new round.
+ * @param context The room store and its event caches.
+ * @param label The edited topic, trimmed before sending.
+ * @param expectedEventId The state event shown when the editor opened.
+ * @returns True when confirmed, or false when the round changed or editing is unavailable.
+ * @throws Error If sending the state event fails.
+ */
+const updateRoundLabel = (
+  context: PlanningPokerContext,
+  label: string,
+  expectedEventId: string,
+): Promise<boolean> => {
+  const round = context.store.getState().round;
+  if (!round || round.event_id !== expectedEventId) return Promise.resolve(false);
+  const roundId = getRoundId(round);
+  if (!roundId) return Promise.resolve(false);
+  return sendRoundState(context, 'edit', {
+    ...round.content,
+    label: label.trim() || undefined,
+    round_id: roundId,
+  });
 };
 
 /**
@@ -333,7 +359,16 @@ const matchesRoundAction = (
 ): boolean =>
   event.event_id !== action.previousEventId &&
   event.content.active === action.content.active &&
-  event.content.label === action.content.label;
+  event.content.label === action.content.label &&
+  event.content.round_id === action.content.round_id;
+
+/**
+ * Resolves the stable event ID used by votes while a round is active.
+ * @param event The active round state, which may include a label edit.
+ * @returns The original round event ID.
+ */
+export const getActiveRoundId = (event: StateEvent<PlanningPokerRoundEvent>): string =>
+  event.content.round_id ?? event.event_id;
 
 /**
  * Selects the event ID whose cards belong to the displayed round.
@@ -341,8 +376,9 @@ const matchesRoundAction = (
  * @returns The active or replaced event ID, if available.
  */
 const getRoundId = (event: StateEvent<PlanningPokerRoundEvent>): string | undefined => {
+  if (event.content.round_id) return event.content.round_id;
   if (event.content.active) {
-    return event.event_id;
+    return getActiveRoundId(event);
   }
   return getReplacedRoundId('unsigned' in event ? event.unsigned : undefined);
 };

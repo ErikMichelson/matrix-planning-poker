@@ -193,6 +193,104 @@ it('blocks starting and revealing if permission is revoked while the controls ar
   expect(await store.getState().startRound('Not allowed')).toBe(false);
   events.next(roundEvent('$active', { active: true }));
   expect(await store.getState().revealRound()).toBe(false);
+  expect(await store.getState().updateRoundLabel('Not allowed', '$active')).toBe(false);
   expect(sendStateEvent).not.toHaveBeenCalled();
   expect(store.getState().pendingRoundAction).toBeUndefined();
+});
+
+it('edits an active label while preserving round identity and extension fields', async () => {
+  events.next(roundEvent('$round', { active: true, label: 'Old topic', extension: 'keep' }));
+  sendStateEvent.mockResolvedValue({ room_id: '!room:example.org', event_id: '$edited' });
+  const request = store.getState().updateRoundLabel('  New topic  ', '$round');
+  expect(store.getState().pendingRoundAction).toBe('edit');
+  expect(await store.getState().updateRoundLabel('Duplicate', '$round')).toBe(false);
+  await vi.waitFor(() =>
+    expect(sendStateEvent).toHaveBeenCalledExactlyOnceWith(PLANNING_POKER_ROUND_EVENT, {
+      active: true,
+      label: 'New topic',
+      extension: 'keep',
+      round_id: '$round',
+    }),
+  );
+  events.next(
+    roundEvent(
+      '$edited',
+      { active: true, label: 'New topic', extension: 'keep', round_id: '$round' },
+      2,
+    ),
+  );
+  expect(await request).toBe(true);
+  expect(store.getState().pendingRoundAction).toBeUndefined();
+
+  sendStateEvent.mockResolvedValue({ room_id: '!room:example.org', event_id: '$closed' });
+  const reveal = store.getState().revealRound();
+  await vi.waitFor(() =>
+    expect(sendStateEvent).toHaveBeenLastCalledWith(PLANNING_POKER_ROUND_EVENT, {
+      active: false,
+      label: 'New topic',
+      extension: 'keep',
+      round_id: '$round',
+    }),
+  );
+  events.next(
+    roundEvent(
+      '$closed',
+      { active: false, label: 'New topic', extension: 'keep', round_id: '$round' },
+      3,
+    ),
+  );
+  expect(await reveal).toBe(true);
+});
+
+it('allows clearing a revealed round label without restarting the round', async () => {
+  const closedRound = {
+    ...roundEvent('$closed', { active: false, label: 'Old topic' }),
+    unsigned: { replaces_state: '$round' },
+  };
+  events.next(closedRound);
+  sendStateEvent.mockResolvedValue({ room_id: '!room:example.org', event_id: '$edited' });
+  const request = store.getState().updateRoundLabel('   ', '$closed');
+  await vi.waitFor(() =>
+    expect(sendStateEvent).toHaveBeenCalledExactlyOnceWith(PLANNING_POKER_ROUND_EVENT, {
+      active: false,
+      label: undefined,
+      round_id: '$round',
+    }),
+  );
+  events.next(roundEvent('$edited', { active: false, round_id: '$round' }, 2));
+  expect(await request).toBe(true);
+  expect(store.getState().round?.content.active).toBe(false);
+});
+
+it('refuses edits if no round exists or the editor refers to an older state', async () => {
+  expect(await store.getState().updateRoundLabel('Topic', '$missing')).toBe(false);
+  events.next(roundEvent('$new-round', { active: true }));
+  expect(await store.getState().updateRoundLabel('Old draft', '$old-round')).toBe(false);
+  expect(sendStateEvent).not.toHaveBeenCalled();
+});
+
+it('preserves the original label after a failed edit and allows retrying', async () => {
+  const round = roundEvent('$round', { active: true, label: 'Old topic' });
+  events.next(round);
+  sendStateEvent.mockRejectedValueOnce(new Error('Send failed'));
+  await expect(store.getState().updateRoundLabel('New topic', '$round')).rejects.toThrow(
+    'Send failed',
+  );
+  expect(store.getState().pendingRoundAction).toBeUndefined();
+  expect(store.getState().round).toBe(round);
+  sendStateEvent.mockResolvedValue({ room_id: '!room:example.org', event_id: '$retry' });
+  const retry = store.getState().updateRoundLabel('New topic', '$round');
+  events.next(roundEvent('$retry', { active: true, label: 'New topic', round_id: '$round' }, 2));
+  expect(await retry).toBe(true);
+});
+
+it('requires the original round reference when confirming an edit without a response event ID', async () => {
+  events.next(roundEvent('$round', { active: true }));
+  sendStateEvent.mockResolvedValue({ room_id: '!room:example.org' });
+  const request = store.getState().updateRoundLabel('Topic', '$round');
+  await vi.waitFor(() => expect(sendStateEvent).toHaveBeenCalledOnce());
+  events.next(roundEvent('$unrelated', { active: true, label: 'Topic' }, 2));
+  expect(store.getState().pendingRoundAction).toBe('edit');
+  events.next(roundEvent('$edited', { active: true, label: 'Topic', round_id: '$round' }, 3));
+  expect(await request).toBe(true);
 });
