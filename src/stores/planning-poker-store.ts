@@ -36,6 +36,7 @@ export type RoundAction = 'start' | 'reveal' | 'edit';
 interface PlanningPokerState {
   round: StateEvent<PlanningPokerRoundEvent> | undefined;
   cards: readonly PlanningPokerCard[];
+  joinedMemberCount: number;
   pendingRoundAction: RoundAction | undefined;
   canModifyRounds: boolean;
   connect: () => () => void;
@@ -75,6 +76,7 @@ export const createPlanningPokerStore = (widgetApi: WidgetApi): PlanningPokerSto
   const store = createStore<PlanningPokerState>()(() => ({
     round: undefined,
     cards: [],
+    joinedMemberCount: 0,
     pendingRoundAction: undefined,
     canModifyRounds: false,
     connect: () => connect(context),
@@ -141,7 +143,12 @@ const connect = (context: PlanningPokerContext): (() => void) => {
       context.widgetApi.observeStateEvents('m.room.member').subscribe((event) => {
         if (isValidRoomMemberStateEvent(event)) {
           context.roomMembers.set(event.state_key, event);
-          context.store.setState({ cards: getCards(context, context.store.getState().round) });
+          context.store.setState({
+            cards: getCards(context, context.store.getState().round),
+            joinedMemberCount: [...context.roomMembers.values()].filter(
+              (member) => member.content.membership === 'join',
+            ).length,
+          });
         }
       }),
     );

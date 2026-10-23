@@ -10,6 +10,7 @@
     "cancel": "Cancel"
   },
   "info": {
+    "voteCount": "{{count}} / {{total}} votes",
     "roundChanged": "The round has changed. Close this dialog and reopen it to edit the current label.",
     "noRoundPermission": "You don't have permission in this room to modify planning poker rounds.",
     "noActiveRound": "There's no active planning poker round yet.",

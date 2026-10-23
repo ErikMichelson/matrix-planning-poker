@@ -41,6 +41,13 @@ const cardEvent = (
   },
 });
 
+const memberEvent = (userId: string, membership: string): StateEvent<unknown> => ({
+  ...roundEvent('$member', true, 3),
+  type: 'm.room.member',
+  state_key: userId,
+  content: { membership },
+});
+
 let stateEvents: Subject<StateEvent<unknown>>;
 let roomEvents: Subject<RoomEvent<unknown>>;
 let store: PlanningPokerStore;
@@ -254,6 +261,44 @@ it('updates member names without mutating a previously published card snapshot',
   expect(previousCards[0]?.displayName).toBe('@alice:example.org');
   expect(store.getState().cards[0]?.displayName).toBe('Alice');
   expect(store.getState().cards).not.toBe(previousCards);
+});
+
+it('counts joined members once and updates the total when they leave or rejoin', () => {
+  expect(store.getState().joinedMemberCount).toBe(0);
+  stateEvents.next(memberEvent('@alice:example.org', 'join'));
+  stateEvents.next(memberEvent('@bob:example.org', 'join'));
+  expect(store.getState().joinedMemberCount).toBe(2);
+  stateEvents.next(memberEvent('@alice:example.org', 'join'));
+  expect(store.getState().joinedMemberCount).toBe(2);
+  stateEvents.next(memberEvent('@bob:example.org', 'leave'));
+  expect(store.getState().joinedMemberCount).toBe(1);
+  stateEvents.next(memberEvent('@bob:example.org', 'join'));
+  expect(store.getState().joinedMemberCount).toBe(2);
+});
+
+it.each(['invite', 'knock', 'leave', 'ban'])(
+  'does not count %s memberships as active room members',
+  (membership) => {
+    stateEvents.next(memberEvent('@alice:example.org', 'join'));
+    stateEvents.next(memberEvent('@bob:example.org', membership));
+    expect(store.getState().joinedMemberCount).toBe(1);
+    stateEvents.next(memberEvent('@alice:example.org', membership));
+    expect(store.getState().joinedMemberCount).toBe(0);
+  },
+);
+
+it('counts a changed vote once and clears votes, but not membership, for a new round', () => {
+  stateEvents.next(memberEvent('@alice:example.org', 'join'));
+  stateEvents.next(memberEvent('@bob:example.org', 'join'));
+  stateEvents.next(roundEvent('$round', true, 1));
+  roomEvents.next(cardEvent('$round', '5'));
+  roomEvents.next({ ...cardEvent('$round', '8'), event_id: '$updated-card', origin_server_ts: 3 });
+  expect(store.getState().cards).toHaveLength(1);
+  expect(store.getState().cards[0]?.value).toBe('8');
+  expect(store.getState().joinedMemberCount).toBe(2);
+  stateEvents.next(roundEvent('$new-round', true, 4));
+  expect(store.getState().cards).toHaveLength(0);
+  expect(store.getState().joinedMemberCount).toBe(2);
 });
 
 const powerEvent = (content: unknown): StateEvent<unknown> => ({

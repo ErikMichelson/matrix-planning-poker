@@ -1,4 +1,3 @@
-import { List } from '@mui/material';
 import React from 'react';
 import { useStore } from 'zustand';
 
@@ -13,10 +12,7 @@ export const LastPlanningPokerRound: React.FC<LastPlanningPokerRoundProps> = ({
   planningPokerStore,
 }) => {
   const cards = useStore(planningPokerStore, (state) => state.cards);
+  const joinedMemberCount = useStore(planningPokerStore, (state) => state.joinedMemberCount);
 
-  return (
-    <List>
-      <PlanningPokerCards cards={cards} revealed />
-    </List>
-  );
+  return <PlanningPokerCards cards={cards} joinedMemberCount={joinedMemberCount} revealed />;
 };

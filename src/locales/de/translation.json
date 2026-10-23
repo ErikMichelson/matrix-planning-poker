@@ -10,6 +10,7 @@
     "cancel": "Abbrechen"
   },
   "info": {
+    "voteCount": "{{count}} / {{total}} Stimmen",
     "roundChanged": "Die Runde hat sich geändert. Schließe diesen Dialog und öffne ihn erneut, um die aktuelle Beschreibung zu bearbeiten.",
     "noRoundPermission": "Du hast in diesem Raum keine Berechtigung, Planning-Poker-Runden zu ändern.",
     "noActiveRound": "Es ist noch keine Planning Poker Runde aktiv.",

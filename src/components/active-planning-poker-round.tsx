@@ -22,6 +22,7 @@ export const ActivePlanningPokerRound: React.FC<ActivePlanningPokerRoundProps> =
 }) => {
   const widgetApi = useWidgetApi();
   const cards = useStore(planningPokerStore, (state) => state.cards);
+  const joinedMemberCount = useStore(planningPokerStore, (state) => state.joinedMemberCount);
   const myCard = cards.find((c) => c.sender === widgetApi.widgetParameters.userId);
   const sendCardElements = PLANNING_POKER_CARD_VALUES.map((value) => {
     return (
@@ -57,9 +58,7 @@ export const ActivePlanningPokerRound: React.FC<ActivePlanningPokerRoundProps> =
       >
         {sendCardElements}
       </Box>
-      <Box>
-        <PlanningPokerCards cards={cards} />
-      </Box>
+      <PlanningPokerCards cards={cards} joinedMemberCount={joinedMemberCount} />
     </>
   );
 };
