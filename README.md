@@ -1,8 +1,8 @@
 # Matrix Planning Poker Widget
 
 This is a widget for matrix clients like [Element](https://element.io/app) that allows participants
-of a room to vote for Fibonacci weights, for example in the use case of evaluating weights in a
-sprint planning workflow.
+of a room to vote for Fibonacci weights, for example in the use case of evaluating
+weights in a sprint planning workflow ("planning poker").
 
 This project is a hard-fork of [`weeman/matrix-planning-poker`](https://codeberg.org/weeman/matrix-planning-poker/)
 with the following enhancements:
@@ -16,6 +16,18 @@ with the following enhancements:
 
 This widget is built and hosted on GitHub pages, so you can go to the deployment and copy the
 installation directly command from there: <https://erikmichelson.github.io/matrix-planning-poker/>
+
+## Screenshots
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/voting-dark.png">
+  <img alt="Voting phase" src="screenshots/voting-light.png">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/results-dark.png">
+  <img alt="Results view" src="screenshots/results-light.png">
+</picture>
 
 ## Development
 
@@ -47,7 +59,7 @@ round event. This is later user to aggregate votes together.
     "active": true,
     // custom label for the current round
     "label": "https://example.com/issue-123",
-    // Round ID to keep votes on edited rounds
+    // Optional: round ID (original state event id) to keep votes on edited rounds
     "round_id": "$123456789"
   }
 }
@@ -73,4 +85,5 @@ reference to the latest planning poker round room state when they select a card.
 
 ## License
 
-Licensed under MIT license.
+Licensed under MIT license.\
+Contributing back is welcome!
